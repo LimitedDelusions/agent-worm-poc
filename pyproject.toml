@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-worm-poc"
+version = "0.6.0"
+description = "Controlled POC for measuring model-placement effects on synthetic prompt-worm propagation in a fixed multi-agent workflow."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Research use; third-party model licenses apply separately."}
+authors = [{name = "Research POC"}]
+dependencies = []
+
+[project.scripts]
+agent-worm = "agent_worm_poc.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

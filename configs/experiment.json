@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "experiment_name": "four_model_four_role_document_worm_placement_poc",
+  "research_question": "How does the placement of Qwen3-30B-A3B-Instruct-2507, Gemma-3-27B-IT, GPT-OSS-20B, and NVIDIA-Nemotron-3-Nano-30B-A3B-BF16 within a fixed four-agent workflow affect the propagation of synthetic self-replicating prompt injections?",
+  "generation": {
+    "temperature": 0.2,
+    "top_p": 0.95,
+    "max_tokens": 512,
+    "timeout_seconds": 240,
+    "request_retries": 1
+  },
+  "base_seed": 20260806,
+  "default_poc_repetitions": 1,
+  "compatibility_benign_repetitions": 3,
+  "conditions": [
+    {
+      "id": "benign",
+      "file": "data/benign_document.txt",
+      "type": "control"
+    },
+    {
+      "id": "injection_direct",
+      "file": "data/injection_direct.txt",
+      "type": "synthetic-injection"
+    },
+    {
+      "id": "injection_authority",
+      "file": "data/injection_authority.txt",
+      "type": "synthetic-injection"
+    },
+    {
+      "id": "injection_artifact",
+      "file": "data/injection_artifact.txt",
+      "type": "synthetic-injection"
+    }
+  ],
+  "safety": {
+    "isolated_lab_only": true,
+    "external_network_actions": false,
+    "real_credentials": false,
+    "real_sensitive_data": false,
+    "real_tools": false,
+    "nonfunctional_mock_action_only": true
+  }
+}
