@@ -19,6 +19,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates coreutils curl git jq procps psmisc python3-venv tini unzip util-linux zip \
+    && ln -sf "$(command -v python3)" /usr/local/bin/python \
+    && python --version \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m venv /opt/jupyter-venv \
