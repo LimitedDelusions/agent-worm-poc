@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-worm-poc"
-version = "0.6.0"
-description = "Controlled POC for measuring model-placement effects on synthetic prompt-worm propagation in a fixed multi-agent workflow."
+version = "0.7.0"
+description = "Controlled POC for measuring model-placement effects on document-borne prompt-injection propagation through agent-generated artifacts."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "Research use; third-party model licenses apply separately."}

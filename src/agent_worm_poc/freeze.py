@@ -26,7 +26,7 @@ def _request_bytes(url: str, token: str, *, timeout: int, attempts: int = 3) -> 
             url,
             headers={
                 "Authorization": f"Bearer {token}",
-                "User-Agent": "agent-worm-poc/0.6.0",
+                "User-Agent": "agent-worm-poc/0.7.0",
             },
         )
         try:

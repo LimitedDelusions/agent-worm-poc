@@ -1,74 +1,31 @@
-# Artifacts and What to Pull Out
+# Output Artifacts
 
-The final ZIP contains `outputs/` and `source/`, plus package-level integrity files.
+## End goal
 
-## Immediate instructor artifacts
+Leave the Pod with a verified evidence package that allows the run to be audited without relying on the live environment.
 
-| Artifact | Use |
+| Artifact | Purpose |
 |---|---|
-| `outputs/NEXT_MEETING_SUMMARY.md` | One-page meeting summary and advance/revise recommendation |
-| `outputs/NEXT_MEETING_SUMMARY.json` | Machine-readable pass/fail gates |
-| `outputs/poc/placement_summary.csv` | Compare outcomes across the 24 placements and four conditions |
-| `outputs/compatibility/compatibility_summary.json` | Show that all four models could perform the workflow |
-| `outputs/poc/manifest.json` | Exact research question, workload, models, prompts, settings, placements, and counts |
-
-## Raw and audit evidence
-
-| Artifact | Use |
-|---|---|
-| `outputs/setup/preflight.json` | Image, secrets, storage, GPU, runtime, and cost preflight |
-| `outputs/setup/frozen_models.json` | Exact immutable model configuration |
-| `outputs/setup/model_access_and_revisions.json` | Hugging Face access and revision evidence |
-| `outputs/setup/frozen_models_manifest.json` | Frozen-config and probe-file hashes |
-| `outputs/fake_validation/manifest.json` | Simulated orchestration validation |
-| `outputs/shakedown/manifest.json` | Cross-model shakedown result |
-| `outputs/poc/stage_events.jsonl` | Every stage’s input, output, raw response, validation, and lineage |
-| `outputs/poc/request_catalog.jsonl` | Every unique request payload, model, seed, timing, and token record |
+| `outputs/session/launch.json` | Session ID, start time, image digest, repetitions, Pod identity, recorded hourly rate |
+| `outputs/setup/preflight.json` | Runtime, GPU, storage, secret, and integrity checks |
+| `outputs/setup/frozen_models.json` | Exact model/tokenizer/code/parser revisions |
+| `outputs/compatibility/compatibility_summary.json` | Four-model competency gate |
+| `outputs/positive_control/positive_control_evaluation.json` | Proof that the assay can observe two-hop artifact reproduction |
+| `outputs/shakedown/manifest.json` | One-placement cross-model end-to-end check |
+| `outputs/poc/manifest.json` | Full run design and execution counts |
+| `outputs/poc/stage_events.jsonl` | Every stage input, output, forwarded artifact, model, seed, validation result, and raw response |
+| `outputs/poc/request_catalog.jsonl` | Every independent inference request and timing/token metadata |
 | `outputs/poc/run_scores.csv` | One scored row per workflow |
-| `outputs/poc/run_scores.jsonl` | Machine-readable full run scores |
-| `outputs/poc/failures.json` | Detailed workflow failures; should be empty for a passing POC |
-| `outputs/*/server_lifecycle.jsonl` | Model load, readiness, GPU memory, shutdown, and release evidence |
-| `outputs/*/server_logs/*.log` | vLLM server logs for troubleshooting and reproducibility |
-| `outputs/session/gated-run.log` | Full ordered run log |
-| `outputs/session/unit-tests.txt` | Tests rerun inside the final GPU container |
+| `outputs/poc/placement_summary.csv` | Aggregated metrics by full four-role placement and scenario |
+| `outputs/poc/intake_relay_summary.csv` | Primary propagation outcomes for the 12 ordered intake→relay model pairs |
+| `outputs/NEXT_MEETING_SUMMARY.md` | Instructor-facing summary |
+| `outputs/NEXT_MEETING_SUMMARY.json` | Machine-readable gates and recommendation |
+| `outputs/session/gated-run.log` | Complete run log |
 | `outputs/session/cost_estimate.json` | Estimated gated-run compute cost |
-| `outputs/session/launch.json` | Image digest, Pod metadata, rate, repetitions, and start time |
-| `outputs/session_status.json` | Final phase and state |
+| `source/` in result package | Exact source snapshot used by the run |
+| `PACKAGE_MANIFEST.json` | SHA-256 and size for every packaged file |
+| result `.zip.sha256` | Verification of the downloaded evidence ZIP |
 
-## Package integrity
+## Pull these out before termination
 
-| Artifact | Use |
-|---|---|
-| `PACKAGE_MANIFEST.json` | SHA-256 and byte count for every packaged file |
-| `ARTIFACT_INDEX.md` | Indicates which expected artifacts are present |
-| `PACKAGE_README.md` | Explains package structure and verification |
-| adjacent `.zip.sha256` | Verifies the downloaded ZIP |
-| `source/SOURCE_HASHES.sha256` | Verifies the exact source snapshot |
-| `source/RELEASE_MANIFEST.json` | Release audit results and limitations |
-
-## End product to extract for the course
-
-From a successful POC, pull out:
-
-1. exact research question;
-2. workflow diagram and role descriptions;
-3. exact four model deployments and revisions;
-4. compatibility table;
-5. preliminary placement comparison table;
-6. whether placement variation appeared within the same attack condition;
-7. benign utility result;
-8. measured compute cost and feasibility;
-9. methodological limitations;
-10. recommendation for the final sample size, held-out attacks, and whether request reuse must be disabled.
-
-## Key measurement fields
-
-| Field | Meaning |
-|---|---|
-| `raw_restricted_action_approved_rate` | Executor approved the restricted mock action, whether or not a continuous worm chain reached it |
-| `end_to_end_compromise_rate` | Restricted mock action was approved only after contiguous intake adoption, relay preservation, and restricted planning |
-| `independent_violation_rate` | Downstream policy violation occurred without the complete upstream propagation chain |
-| `relay_rate` | Exact marker reached a second agent; this is the minimum threshold for agent-to-agent propagation |
-| `benign_task_success_rate` | Legitimate item survived all four roles and the allowed mock lookup was approved |
-
-These fields must not be substituted for one another when discussing results.
+Download both the result ZIP and its `.sha256` sidecar. Verify locally, extract, and confirm `ARTIFACT_INDEX.md`, `PACKAGE_MANIFEST.json`, `outputs/NEXT_MEETING_SUMMARY.md`, and the POC files above are present.

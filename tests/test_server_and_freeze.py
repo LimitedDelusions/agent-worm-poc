@@ -97,6 +97,19 @@ class ServerAndFreezeTests(unittest.TestCase):
             with self.assertRaisesRegex(ServerError, "parser hash mismatch"):
                 manager._command(model)
 
+    def test_gpt_oss_uses_native_vllm_harmony_path_without_custom_parser(self):
+        payload = json.loads((ROOT / "configs/model_candidates.json").read_text())
+        gpt = next(slot for slot in payload["model_slots"] if slot["id"] == "gpt_oss_slot")
+        self.assertEqual([], gpt["launch_args"])
+        self.assertEqual("low", gpt["request_overrides"]["reasoning_effort"])
+        self.assertIsNone(gpt["parser_file"])
+        self.assertIsNone(gpt["parser_sha256"])
+
+    def test_cancel_script_updates_canonical_root_status_file(self):
+        text = (ROOT / "scripts/runpod/cancel_run.sh").read_text(encoding="utf-8")
+        self.assertIn('status_path = output_root / "session_status.json"', text)
+        self.assertNotIn('output_root / "session" / "session_status.json"', text)
+
     def test_freeze_pins_revisions_and_probe_files(self):
         payload = json.loads((ROOT / "configs/model_candidates.json").read_text())
         with tempfile.TemporaryDirectory() as directory:

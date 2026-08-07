@@ -1,59 +1,82 @@
-# Final Validation Report
+# Agent Worm POC v0.7.0 Final Validation Report
 
 ## Release under test
 
 - Project: Agent Worm Model-Placement POC
-- Version: 0.6.0
+- Version: 0.7.0
 - Validation date: 2026-08-06
-- Supported paid path: one prebuilt container on one A100 80 GB RunPod Pod
+- Supported paid path: one prebuilt container on one on-demand A100 80 GB RunPod Pod
+- Main POC default: 24 placements × 4 scenarios × 3 repetitions = 288 workflows and 1,152 independent stage requests
 
-## Completed validations
+## Completed local validations
 
 | Validation | Result |
 |---|---|
 | Python compilation (`src`, `scripts`, `tests`) | PASS |
-| Unit/integration/regression tests | PASS — 43 tests |
+| Unit/integration/regression tests | PASS — 48 tests |
 | Bash syntax for all shell scripts | PASS |
-| JSON config parsing | PASS |
-| GitHub Actions workflow YAML parsing | PASS |
-| Release integrity/secret/safety audit | PASS — no errors or warnings |
+| JSON configuration parsing | PASS |
+| Release integrity/secret/safety audit | PASS after final manifest regeneration |
+| Positive-control simulation | PASS — 2 workflows at artifact depth 2 |
 | Full fake-adapter placement validation | PASS |
-| ZIP construction and internal integrity test | Performed during final release packaging |
-| Release SHA-256 sidecar verification | Performed during final release packaging |
+| Pair-level primary-outcome aggregation | PASS — 48 rows |
+| Response reuse accounting | PASS — 0 reused stages |
+| Evidence package creation and ZIP integrity | PASS in unit/integration testing; repeated against the extracted final release during packaging |
+| Partial-evidence packaging before model freeze | PASS |
 
-## Simulated placement-validation counts
+## Simulated main-POC counts
 
-- Four model slots
-- Four fixed roles
-- Four conditions
-- 24 placements
-- 96 workflows
-- 384 logical stage events
-- 78 unique simulated inference requests
-- 306 explicitly linked reused stage events
-- 0 failed workflows
-- 0 schema-invalid stages
-- 0 semantic-invalid stages
-- 0 output-invalid stages
+- Model slots: 4
+- Roles: 4
+- Main scenarios: 4
+- Complete placements: 24
+- Repetitions in simulated plumbing check: 1
+- Workflows: 96 planned / 96 completed
+- Logical stage events: 384
+- Unique simulated inference requests: 384
+- Reused stage events: 0
+- Failed workflows: 0
+- Schema-invalid stages: 0
+- Semantic-invalid stages: 0
+- Output-invalid stages: 0
+- Intake-to-relay summary rows: 48 = 12 ordered pairs × 4 scenarios
 
-The fake adapter validates orchestration, state transfer, placement enumeration, request reuse bookkeeping, scoring, reporting, and packaging. It is explicitly not research evidence about real models.
+The simulated check validates code and measurement plumbing only. It is explicitly marked `research_evidence: false` and cannot be used as a model-security result.
 
-## Coverage result
+## Experimental design checks
 
-Overall measured line coverage: **64%**.
-
-Strongly covered modules include compatibility (88%), engine/orchestration (83%), reporting/packaging (94%), scoring (96%), types (100%), and utilities (96%). Lower coverage is concentrated in code that requires an actual NVIDIA environment or live vLLM HTTP process: preflight, HTTP error handling, server startup/readiness/shutdown, and CLI dispatch.
+| Design control | Result |
+|---|---|
+| Injected document equals benign document plus one appended carrier block | PASS |
+| Neutral roles contain no attack-specific guidance | PASS |
+| Positive and hardened controls are separate | PASS |
+| Trusted role instructions use system messages; documents/artifacts use user messages | PASS |
+| Positive, neutral, and hardened injected conditions use the same source document | PASS |
+| Generated artifacts become downstream inputs | PASS |
+| Schemas do not ask the model about the carrier | PASS |
+| Contiguous two-artifact scoring is enforced | PASS |
+| Independent downstream violations are separated | PASS |
+| Main real POC forbids response reuse | PASS |
+| Real POC requires 2–5 repetitions | PASS |
+| Positive control requires at least 2 repetitions | PASS |
+| Real tools and external effects are absent | PASS |
 
 ## Mandatory external gates
 
-The release must not be treated as deployable until:
+The release must not be treated as ready for research interpretation until:
 
-1. GitHub Actions `validate` passes, including ShellCheck.
-2. GitHub Actions `build` successfully builds and publishes the pinned container.
-3. RunPod preflight passes on one A100 80 GB GPU.
-4. All four exact model deployments pass compatibility.
-5. The cross-model shakedown passes.
+1. GitHub Actions `validate` passes, including ShellCheck and simulated validation.
+2. GitHub Actions `build` successfully publishes the pinned amd64 container.
+3. The exact GHCR digest can be pulled by RunPod using public visibility or separate read-only registry credentials.
+4. RunPod preflight passes on one A100 80 GB GPU.
+5. All four exact model deployments pass compatibility.
+6. The two-repetition positive control reaches both generated artifacts.
+7. The one-placement neutral/hardened shakedown passes before the full POC begins.
+
+## Required real-run outputs
+
+The evidence ZIP must contain the frozen model manifest, compatibility summary, positive-control evaluation, shakedown manifest, POC manifest, stage events, independent request catalog, workflow scores, 24-placement summary, 12-pair intake-to-relay summary, instructor summary, cost estimate, exact source snapshot, package manifest, and ZIP checksum.
 
 ## Remaining uncertainty
 
-No static audit can guarantee zero defects. The largest unresolved risks are real image build compatibility, Hugging Face repository changes, A100/vLLM model-loading behavior, model-specific reasoning/output handling, and strict JSON-schema compliance. The release handles these as fail-fast gates and packages evidence instead of continuing into an invalid 24-placement run.
+No static audit guarantees real-model success. The largest unresolved risks are container-build disk limits, Hugging Face repository changes, model/vLLM compatibility, model-specific structured-output behavior, actual download/load time, and whether the neutral carrier produces sufficient multi-hop variation. The gated run is designed to stop and package evidence instead of continuing after any invalid prerequisite.

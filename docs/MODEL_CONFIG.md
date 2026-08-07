@@ -1,56 +1,44 @@
-# Model Configuration and Compatibility Gate
+# Model Configuration
 
-## Why these four models
+## Fixed candidate deployments
 
-The sample intentionally spans four distinct developer/model lineages and includes dense, mixture-of-experts, multimodal, and hybrid Mamba/attention designs. The POC does not claim that one selected checkpoint represents its entire family.
+1. Qwen/Qwen3-30B-A3B-Instruct-2507
+2. google/gemma-3-27b-it
+3. openai/gpt-oss-20b
+4. nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16
 
-## Candidate repositories
+These are four specific deployments, not representatives of every model in their broader families.
 
-| Slot | Repository | Runtime notes |
-|---|---|---|
-| `qwen_slot` | `Qwen/Qwen3-30B-A3B-Instruct-2507` | BF16; text instruct model |
-| `gemma_slot` | `google/gemma-3-27b-it` | BF16; gated license acceptance required |
-| `gpt_oss_slot` | `openai/gpt-oss-20b` | Native low-precision weights; low reasoning effort requested |
-| `nvidia_slot` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16` | BF16; exact trusted code and custom reasoning parser are frozen |
+## Freeze gate
 
-## Runtime controls
+Before real inference, `freeze-models` records:
 
-All models use:
+- model revision;
+- tokenizer revision;
+- access probe files;
+- remote-code revision where applicable;
+- local Nemotron reasoning-parser file and SHA-256.
+
+The server refuses real runs when required revisions or parser hashes are missing.
+
+## Common controls
 
 - one A100 80 GB GPU;
-- vLLM 0.25.1;
 - one model loaded at a time;
-- tensor parallel size 1;
-- 8,192-token context limit;
-- maximum one active sequence;
-- 90% GPU-memory utilization target;
-- eager execution;
-- model generation defaults disabled in favor of the fixed POC parameters.
+- vLLM 0.25.1 pinned in the container;
+- common generation settings from `configs/experiment.json`;
+- one request at a time;
+- official model chat behavior through the OpenAI-compatible endpoint;
+- model-specific overrides only where declared in `configs/model_candidates.json`.
 
-## Immutable freeze
+## Model-specific serving controls
 
-Before any real model server starts, the POC:
+- **GPT-OSS 20B:** uses vLLM's native Harmony/reasoning handling. Requests set `reasoning_effort=low`; no custom reasoning-parser plugin is configured.
+- **Nemotron 3 Nano:** uses the model repository's `nano_v3` reasoning-parser plugin. `freeze-models` downloads that parser from the exact frozen model revision, records its SHA-256, and the server refuses to launch if the file or hash changes. Requests set `enable_thinking=false`.
+- **Qwen and Gemma:** use their frozen official tokenizer/chat-template behavior through the common OpenAI-compatible vLLM endpoint.
 
-1. authenticates to Hugging Face with a read-only token;
-2. obtains the exact 40-character commit SHA for each repository;
-3. freezes model and tokenizer revisions;
-4. downloads and hashes `config.json` and `tokenizer_config.json`;
-5. downloads the Nemotron parser from the same frozen revision;
-6. records all hashes and paths;
-7. parses the frozen file through the same strict config loader used by the experiment.
+These differences are recorded as properties of the four exact deployments and are not altered between placements.
 
-## Compatibility pass rule
+## Replacement rule
 
-A model passes only if it:
-
-- loads successfully;
-- releases GPU memory after shutdown;
-- returns schema- and semantic-valid JSON for all roles;
-- completes three benign workflows correctly;
-- completes one injected workflow without infrastructure or output-format failure.
-
-A failed model does not enter the placement POC. The gated run stops instead of silently substituting another model.
-
-## Why no automatic fallback model
-
-Automatic substitution would change the research question after testing started. Any replacement must be discussed, documented, and followed by a new frozen model inventory and a new POC session.
+Do not replace a model during the gated run. If a model fails compatibility, stop, preserve the evidence, revise the candidate set, rebuild the image/config, and rerun all gates from the beginning.

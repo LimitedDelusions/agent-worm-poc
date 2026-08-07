@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "status": "candidate-models-not-yet-frozen",
-  "notes": "Exact revisions and the Nemotron parser hash are frozen automatically before any real-model run. These four deployments are the POC subjects; results must not be generalized to every model in their broader families.",
+  "notes": "Exact revisions and the Nemotron parser hash are frozen automatically before any real-model run. These four deployments are the POC subjects; results must not be generalized to every model in their broader families. Fake profiles exist only for deterministic engineering validation and are never research evidence.",
   "model_slots": [
     {
       "id": "qwen_slot",
@@ -13,15 +13,21 @@
       "revision": null,
       "tokenizer_revision": null,
       "trust_remote_code": false,
-      "launch_args": ["--dtype", "bfloat16"],
+      "launch_args": [
+        "--dtype",
+        "bfloat16"
+      ],
       "request_overrides": {},
       "parser_file": null,
       "parser_sha256": null,
       "fake_profile": {
-        "intake_adopt": 0.60,
-        "relay_preserve": 0.45,
-        "planner_restricted": 0.50,
-        "executor_restricted": 0.40
+        "intake_reproduce": 0.62,
+        "relay_reproduce": 0.44,
+        "intake_mutate": 0.12,
+        "relay_mutate": 0.14,
+        "planner_restricted": 0.48,
+        "executor_restricted": 0.56,
+        "semantic_mutate": 0.55
       }
     },
     {
@@ -34,15 +40,21 @@
       "revision": null,
       "tokenizer_revision": null,
       "trust_remote_code": false,
-      "launch_args": ["--dtype", "bfloat16"],
+      "launch_args": [
+        "--dtype",
+        "bfloat16"
+      ],
       "request_overrides": {},
       "parser_file": null,
       "parser_sha256": null,
       "fake_profile": {
-        "intake_adopt": 0.25,
-        "relay_preserve": 0.20,
-        "planner_restricted": 0.25,
-        "executor_restricted": 0.15
+        "intake_reproduce": 0.34,
+        "relay_reproduce": 0.23,
+        "intake_mutate": 0.16,
+        "relay_mutate": 0.15,
+        "planner_restricted": 0.28,
+        "executor_restricted": 0.42,
+        "semantic_mutate": 0.3
       }
     },
     {
@@ -56,15 +68,21 @@
       "tokenizer_revision": null,
       "trust_remote_code": false,
       "launch_args": [],
-      "request_overrides": {"reasoning_effort": "low"},
+      "request_overrides": {
+        "reasoning_effort": "low"
+      },
       "parser_file": null,
       "parser_sha256": null,
       "fake_profile": {
-        "intake_adopt": 0.42,
-        "relay_preserve": 0.58,
-        "planner_restricted": 0.38,
-        "executor_restricted": 0.36
-      }
+        "intake_reproduce": 0.28,
+        "relay_reproduce": 0.55,
+        "intake_mutate": 0.1,
+        "relay_mutate": 0.16,
+        "planner_restricted": 0.4,
+        "executor_restricted": 0.52,
+        "semantic_mutate": 0.45
+      },
+      "notes": "vLLM handles GPT-OSS Harmony/reasoning output natively. The request sets reasoning_effort='low'; no custom reasoning parser plugin is configured."
     },
     {
       "id": "nvidia_slot",
@@ -77,19 +95,30 @@
       "tokenizer_revision": null,
       "trust_remote_code": true,
       "launch_args": [
-        "--dtype", "bfloat16",
-        "--reasoning-parser-plugin", "{parser_path}",
-        "--reasoning-parser", "nano_v3"
+        "--dtype",
+        "bfloat16",
+        "--reasoning-parser-plugin",
+        "{parser_path}",
+        "--reasoning-parser",
+        "nano_v3"
       ],
-      "request_overrides": {"chat_template_kwargs": {"enable_thinking": false}},
+      "request_overrides": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
       "parser_file": null,
       "parser_sha256": null,
       "fake_profile": {
-        "intake_adopt": 0.35,
-        "relay_preserve": 0.32,
-        "planner_restricted": 0.62,
-        "executor_restricted": 0.50
-      }
+        "intake_reproduce": 0.48,
+        "relay_reproduce": 0.36,
+        "intake_mutate": 0.14,
+        "relay_mutate": 0.18,
+        "planner_restricted": 0.64,
+        "executor_restricted": 0.6,
+        "semantic_mutate": 0.5
+      },
+      "notes": "Nemotron requires the revision-pinned nano_v3 reasoning parser file supplied by the model repository; freeze-models downloads and hashes it before any real inference."
     }
   ]
 }

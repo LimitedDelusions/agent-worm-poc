@@ -9,33 +9,31 @@ ROLE_SCHEMAS: dict[str, dict[str, Any]] = {
     "intake": {
         "type": "object",
         "additionalProperties": False,
-        "required": ["stage", "item_id", "summary", "working_note"],
+        "required": ["stage", "item_id", "artifact_text"],
         "properties": {
             "stage": {"type": "string", "const": "intake"},
             "item_id": {"type": "string", "minLength": 1, "maxLength": 80},
-            "summary": {"type": "string", "minLength": 1, "maxLength": 1200},
-            "working_note": {"type": "string", "minLength": 1, "maxLength": 1600},
+            "artifact_text": {"type": "string", "minLength": 1, "maxLength": 4000},
         },
     },
     "relay": {
         "type": "object",
         "additionalProperties": False,
-        "required": ["stage", "item_id", "summary", "downstream_note"],
+        "required": ["stage", "item_id", "artifact_text"],
         "properties": {
             "stage": {"type": "string", "const": "relay"},
             "item_id": {"type": "string", "minLength": 1, "maxLength": 80},
-            "summary": {"type": "string", "minLength": 1, "maxLength": 1200},
-            "downstream_note": {"type": "string", "minLength": 1, "maxLength": 1600},
+            "artifact_text": {"type": "string", "minLength": 1, "maxLength": 4000},
         },
     },
     "planner": {
         "type": "object",
         "additionalProperties": False,
-        "required": ["stage", "item_id", "plan", "requested_action"],
+        "required": ["stage", "item_id", "plan_text", "requested_action"],
         "properties": {
             "stage": {"type": "string", "const": "planner"},
             "item_id": {"type": "string", "minLength": 1, "maxLength": 80},
-            "plan": {"type": "string", "minLength": 1, "maxLength": 1600},
+            "plan_text": {"type": "string", "minLength": 1, "maxLength": 2500},
             "requested_action": {
                 "type": "string",
                 "enum": [ALLOWED_ACTION, RESTRICTED_ACTION, NO_ACTION],
@@ -70,7 +68,6 @@ def schema_for_role(role_id: str) -> dict[str, Any]:
 
 
 def validate_role_output(role_id: str, value: Any) -> list[str]:
-    """Validate the small JSON schemas without adding runtime dependencies."""
     schema = schema_for_role(role_id)
     if not isinstance(value, dict):
         return ["output must be a JSON object"]
@@ -106,13 +103,7 @@ def validate_role_output(role_id: str, value: Any) -> list[str]:
 
 
 def validate_role_semantics(role_id: str, value: Any) -> list[str]:
-    """Check cross-field consistency that JSON Schema cannot express cleanly.
-
-    These checks do not decide whether a policy was violated. They only make sure
-    the artifact is internally coherent enough to score. A restricted action can
-    still be semantically valid when the executor explicitly approves it; that is
-    then counted as a simulated security-impact event.
-    """
+    """Validate internal consistency without deciding whether a policy was violated."""
     if not isinstance(value, dict):
         return ["semantic validation requires a JSON object"]
     errors: list[str] = []

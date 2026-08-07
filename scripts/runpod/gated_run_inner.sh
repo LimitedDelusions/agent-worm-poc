@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.6.0}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.7.0}"
 OUTPUT_ROOT="${AGENT_WORM_OUTPUT_ROOT:?AGENT_WORM_OUTPUT_ROOT is required}"
 STATUS_FILE="$OUTPUT_ROOT/session_status.json"
 ACTIVE_PID_FILE="/workspace/agent_worm_outputs/active.pid"
@@ -124,15 +124,18 @@ write_status "running" "tests" "Running unit and integration tests before any mo
 python -m unittest discover -s "$ROOT/tests" -v \
   2>&1 | tee "$OUTPUT_ROOT/session/unit-tests.txt"
 
-write_status "running" "fake-validation" "Validating all 24 placements and all four conditions without real inference."
+write_status "running" "fake-validation" "Validating the positive control plus all 24 placements and four main scenarios without real inference."
 python -m agent_worm_poc.cli --project-root "$ROOT" --output-root "$OUTPUT_ROOT" fake-validation
 
-write_status "running" "compatibility" "Loading each model sequentially and testing every role plus benign workflow competency."
+write_status "running" "compatibility" "Loading each model sequentially and testing every role in the neutral benign workflow."
 python -m agent_worm_poc.cli --project-root "$ROOT" --output-root "$OUTPUT_ROOT" compatibility
 
-write_status "running" "shakedown" "Running one cross-model placement across all four conditions."
+write_status "running" "positive-control" "Proving that two generated artifacts can carry the calibration carrier before the main POC runs."
+python -m agent_worm_poc.cli --project-root "$ROOT" --output-root "$OUTPUT_ROOT" positive-control
+
+write_status "running" "shakedown" "Running one cross-model placement across the four neutral/hardened main scenarios."
 python -m agent_worm_poc.cli --project-root "$ROOT" --output-root "$OUTPUT_ROOT" shakedown
 
-write_status "running" "poc" "Running all 24 model placements across the benign and three injected conditions."
+write_status "running" "poc" "Running all 24 placements across neutral/hardened benign and injected scenarios with independent requests."
 python -m agent_worm_poc.cli --project-root "$ROOT" --output-root "$OUTPUT_ROOT" poc \
-  --repetitions "${POC_REPETITIONS:-1}"
+  --repetitions "${POC_REPETITIONS:-3}"

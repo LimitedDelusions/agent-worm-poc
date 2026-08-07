@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.6.0}"
-MAX_RUNTIME="${AGENT_WORM_MAX_RUNTIME:-6h}"
-POC_REPS="${POC_REPETITIONS:-1}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.7.0}"
+MAX_RUNTIME="${AGENT_WORM_MAX_RUNTIME:-8h}"
+POC_REPS="${POC_REPETITIONS:-3}"
 SESSION_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 OUTPUT_ROOT="/workspace/agent_worm_outputs/$SESSION_ID"
 PID_FILE="/workspace/agent_worm_outputs/active.pid"
@@ -20,8 +20,8 @@ fail() {
   || fail "AGENT_WORM_IMAGE_REF must be the exact lowercase GHCR digest from RUNPOD_IMAGE.txt"
 [[ "$MAX_RUNTIME" =~ ^[1-9][0-9]*[smhd]$ ]] \
   || fail "AGENT_WORM_MAX_RUNTIME must look like 90m, 6h, or 1d"
-[[ "$POC_REPS" =~ ^[1-3]$ ]] \
-  || fail "POC_REPETITIONS must be 1, 2, or 3 for this cost-controlled POC"
+[[ "$POC_REPS" =~ ^[2-5]$ ]] \
+  || fail "POC_REPETITIONS must be 2, 3, 4, or 5 for this POC"
 [[ "${RUNPOD_HOURLY_RATE:-}" =~ ^[0-9]+([.][0-9]+)?$ ]] \
   || fail "set RUNPOD_HOURLY_RATE to the total hourly price displayed by RunPod"
 if ! python - <<'PY' >/dev/null
@@ -75,7 +75,7 @@ value = {
     "runpod_pod_id": os.environ.get("RUNPOD_POD_ID"),
     "runpod_gpu_name": os.environ.get("RUNPOD_GPU_NAME"),
     "container_image_reference": os.environ["AGENT_WORM_IMAGE_REF"],
-    "project_root": os.environ.get("AGENT_WORM_PROJECT_ROOT", "/workspace/agent_worm_poc_v0.6.0"),
+    "project_root": os.environ.get("AGENT_WORM_PROJECT_ROOT", "/workspace/agent_worm_poc_v0.7.0"),
     "note": "Cost timing begins when this gated command starts, not when the Pod was first created.",
 }
 Path(sys.argv[1]).write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")

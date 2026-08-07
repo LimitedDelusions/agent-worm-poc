@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches: ["main"]
-    tags: ["v0.6.0"]
+    tags: ["v0.7.0"]
 
 concurrency:
   group: agent-worm-poc-${{ github.ref }}
   cancel-in-progress: false
 
 env:
-  IMAGE_VERSION: 0.6.0
+  IMAGE_VERSION: 0.7.0
 
 jobs:
   validate:
@@ -82,11 +82,14 @@ jobs:
           import json
           from pathlib import Path
           m=json.loads(Path('outputs/ci-fake-validation/fake_validation/manifest.json').read_text())
-          assert m['placements'] == 24, m
-          assert m['planned_workflows'] == 96, m
-          assert m['failed_workflows'] == 0, m
-          assert m['schema_invalid_stages'] == 0, m
-          assert m['semantic_invalid_stages'] == 0, m
+          assert m['passed'] is True, m
+          p=m['poc']
+          assert p['placements'] == 24, p
+          assert p['planned_workflows'] == 96, p
+          assert p['failed_workflows'] == 0, p
+          assert p['schema_invalid_stages'] == 0, p
+          assert p['semantic_invalid_stages'] == 0, p
+          assert m['positive_control_evaluation']['passed'] is True, m
           print(json.dumps(m, indent=2))
           PY
 
@@ -138,18 +141,18 @@ jobs:
           df -h
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push pinned amd64 image
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile

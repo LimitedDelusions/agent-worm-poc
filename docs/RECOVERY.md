@@ -1,99 +1,45 @@
 # Recovery and Failure Handling
 
-## First rule
+## If GitHub validation fails
 
-Do not improvise package installation or edit the scientific parameters on a paid Pod. Preserve the generated evidence, terminate the Pod, fix the source, rebuild the container through GitHub, and start a new session.
+Do not deploy. Open the failed step, fix the source, rerun all validation, and obtain a new digest.
 
-## If GitHub validation or build fails
+## If the Pod cannot start the image
 
-**Do not deploy RunPod.**
-
-1. Open the failed GitHub Actions job.
-2. Expand the first red step.
-3. Save or copy the error text.
-4. Correct the source and push again.
-5. Proceed only after both jobs pass and a new digest artifact is produced.
-
-## If the Pod never exposes JupyterLab
-
-1. Open the RunPod Pod logs.
-2. Look for a missing secret, image-pull failure, source-integrity failure, or insufficient disk.
-3. Do not run a shell installation workaround.
-4. If the image cannot start, terminate the Pod and correct the template/image.
+Stop the Pod. Confirm the exact lowercase GHCR digest and registry visibility. Do not substitute a mutable tag.
 
 ## If preflight fails
 
-Read:
+Read `outputs/setup/preflight.json` and the gated log. Correct the missing secret, storage, image reference, GPU, or runtime issue. A failed preflight should occur before model download.
 
-```text
-/workspace/agent_worm_outputs/<session>/setup/preflight.json
+## If a model fails compatibility
+
+The run stops. Preserve the packaged partial evidence. Do not skip the model or continue to the POC. Review the model-specific server log and compatibility manifest.
+
+## If positive control fails
+
+The assay cannot demonstrate multi-hop artifact reproduction. Do not interpret neutral zero propagation. Review the carrier, generated artifacts, schemas, and scoring before another paid run.
+
+## If shakedown fails
+
+Do not run all 24 placements. Correct invalid structured output, server stability, or workflow handoff first.
+
+## If the POC hangs or cost grows
+
+```bash
+bash /workspace/agent_worm_poc_v0.7.0/scripts/runpod/status.sh
+bash /workspace/agent_worm_poc_v0.7.0/scripts/runpod/cancel_run.sh
 ```
 
-The failed check identifies the exact issue. Common fixes:
+The cancellation path sends a controlled termination signal and packages partial evidence.
 
-- image reference does not exactly match the digest;
-- volume is too small or not mounted at `/workspace`;
-- Hugging Face/Jupyter secret not injected;
-- hourly rate not set;
-- wrong GPU count or insufficient VRAM;
-- stale compute process exists.
-
-Preflight runs before model download, so a failure should be inexpensive.
-
-## If model freeze fails
-
-- Confirm the same Hugging Face account owns the token and accepted Gemma terms.
-- Confirm the token is read-only but can read gated public models.
-- Do not paste the token into logs or chat.
-- Retry only after correcting account access.
-
-## If compatibility fails
-
-The gated run stops automatically and packages partial evidence. Review:
-
-- `compatibility/compatibility_summary.json`;
-- the failing model’s `manifest.json` and `failures.json`;
-- `compatibility/server_logs/`;
-- `compatibility/server_lifecycle.jsonl`.
-
-Do not interpret a model-load or formatting failure as prompt-injection behavior.
-
-## If the run appears stuck
+## If the result ZIP is missing
 
 Run:
 
 ```bash
-bash scripts/runpod/status.sh
+bash /workspace/agent_worm_poc_v0.7.0/scripts/runpod/package_results.sh \
+  "$(cat /workspace/agent_worm_outputs/latest_session.txt)"
 ```
 
-If the phase and logs are not progressing, cancel safely:
-
-```bash
-bash scripts/runpod/cancel_run.sh
-```
-
-Wait until status reports `NOT RUNNING`. Download the partial evidence ZIP before terminating the Pod.
-
-## If you must leave
-
-- If the gated run is active and still within your budget, the six-hour timeout protects the upper bound.
-- To stop sooner, use the cancel script and wait for packaging.
-- Do not use RunPod Stop before the controlled cancellation completes.
-
-## If evidence packaging fails
-
-The raw session remains under:
-
-```text
-/workspace/agent_worm_outputs/<session-id>
-```
-
-Download that directory or run:
-
-```bash
-bash scripts/runpod/package_results.sh /workspace/agent_worm_outputs/<session-id>
-```
-
-## If the Pod is terminated before download
-
-An attached volume can be permanently deleted. The project cannot recover files that no longer exist. Always download and verify the ZIP first.
+Do not terminate the Pod until the ZIP and checksum are downloaded and verified.

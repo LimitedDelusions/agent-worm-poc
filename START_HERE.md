@@ -1,67 +1,80 @@
-# Start Here
+# Start Here — Agent Worm POC v0.7.0
 
-Use **only v0.6.0**. Earlier v0.4.x and v0.5.x packages are obsolete. Review `AUDIT_REPORT.md` and `FINAL_VALIDATION_REPORT.md` before deployment.
+Use only this v0.7.0 release. Do not mix files with v0.6.0 or an earlier image.
 
-## Before renting another GPU
+## What you need
 
-Complete these free steps:
+- the complete v0.7.0 ZIP and its SHA-256 file;
+- the GitHub repository previously used for the POC;
+- a successful GitHub Actions validation/build run;
+- the exact `ghcr.io/...@sha256:...` reference from `RUNPOD_IMAGE.txt`;
+- the existing RunPod and Hugging Face accounts/secrets;
+- one A100 80 GB Pod for the real gated run.
 
-1. Extract the v0.6.0 release on your computer.
-2. Create a GitHub repository and upload the extracted project contents.
-3. Let the included GitHub Actions workflow validate the code and build the container.
-4. Confirm both GitHub jobs are green.
-5. Download the `agent-worm-poc-container-reference` artifact.
-6. Open `RUNPOD_IMAGE.txt` and copy the exact image reference ending in `@sha256:...`.
-7. Make the GitHub Container Registry package public so RunPod can pull it.
+## Stage 1 — send the project to the coding workspace
 
-Do **not** deploy a Pod if the GitHub workflow failed or if you only have a mutable image tag such as `:0.6.0`.
+1. Put the v0.7.0 ZIP and checksum in the coding workspace.
+2. Give the coder [`CODING_HANDOFF.md`](CODING_HANDOFF.md).
+3. Replace the prior repository contents with the extracted v0.7.0 contents; do not overlay them.
+4. Run the pre-deployment validation commands in the handoff.
+5. Commit and push only after all gates pass.
 
-## RunPod configuration
+**End goal:** a GitHub commit containing exactly v0.7.0.
 
-Create one template with:
+## Stage 2 — build the prevalidated image before paid GPU use
 
-- 1 × A100 PCIe 80 GB or A100 SXM 80 GB
-- On-Demand rental
-- exact GHCR image digest from `RUNPOD_IMAGE.txt`
-- 80 GB container disk
-- 300 GB volume mounted at `/workspace`
-- HTTP port `8888`
-- no Docker command or entrypoint override
-- Hugging Face token and Jupyter password injected through RunPod Secrets
+1. Open the repository’s **Actions** tab.
+2. Run **Validate and Build Agent Worm POC Container**, or allow the push to `main` to trigger it.
+3. Confirm both `validate` and `build` are green.
+4. Download the `agent-worm-poc-container-reference` artifact.
+5. Save the exact digest in `RUNPOD_IMAGE.txt`.
+6. Make the GHCR package public, or configure RunPod registry credentials for the private package, before deployment. Do not paste a GitHub token into the image or project files.
 
-Required environment variables are listed in [docs/RUNPOD_SETUP.md](docs/RUNPOD_SETUP.md).
+**Stop if:** any job is red, the validation artifact is absent, only a mutable tag is available, or RunPod cannot authenticate to the GHCR package.
 
-## One command starts everything
+**End goal:** one immutable GHCR image reference.
 
-After the Pod is running and JupyterLab opens, create a terminal and run:
+## Stage 3 — update the RunPod template
+
+Follow [`docs/RUNPOD_SETUP.md`](docs/RUNPOD_SETUP.md). Use the v0.7.0 digest, one A100 80 GB GPU, a password-protected Jupyter service, Hugging Face token secret, and persistent `/workspace` storage.
+
+**End goal:** the container reports v0.7.0 ready and `/workspace/agent_worm_poc_v0.7.0` exists.
+
+## Stage 4 — run the gated POC
+
+In Jupyter Terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.6.0
-export RUNPOD_HOURLY_RATE="1.49"  # replace 1.49 with RunPod's displayed total hourly rate
+cd /workspace/agent_worm_poc_v0.7.0
 bash scripts/runpod/start_gated_run.sh
 ```
 
-Monitor it with:
+Monitor:
 
 ```bash
 bash scripts/runpod/status.sh
 ```
 
-Cancel safely with:
+The command automatically runs:
 
-```bash
-bash scripts/runpod/cancel_run.sh
-```
+1. preflight;
+2. model revision freeze;
+3. tests;
+4. simulated positive/control validation;
+5. four-model compatibility;
+6. real positive propagation control;
+7. one-placement cross-model shakedown;
+8. all 24 placements across four main scenarios;
+9. evidence packaging.
 
-Do not stop or terminate the Pod while the run is active. Cancel first and wait until `status.sh` reports `NOT RUNNING`.
+**End goal:** a ZIP named `agent-worm-results-...zip` plus its `.sha256` file.
 
-## Completion goal
+## Stage 5 — preserve evidence and stop billing
 
-The run is complete when:
+1. Download the result ZIP and checksum.
+2. Verify the checksum locally.
+3. Extract and read `outputs/NEXT_MEETING_SUMMARY.md`.
+4. Confirm the artifact index and major manifests are present.
+5. Terminate the Pod after the files are verified locally.
 
-- `status.sh` reports `NOT RUNNING`;
-- `session_status.json` reports `completed`;
-- a ZIP named `agent-worm-results-...zip` exists in `/workspace`;
-- the adjacent `.sha256` file exists.
-
-Download both files, confirm the ZIP exists locally, and then **terminate** the Pod to stop compute and storage billing.
+Full beginner instructions: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).

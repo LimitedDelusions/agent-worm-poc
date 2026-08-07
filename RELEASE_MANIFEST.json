@@ -1,10 +1,10 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "project": "agent-worm-poc",
-  "version": "0.6.0",
-  "created_at": "2026-08-06T12:50:13Z",
+  "version": "0.7.0",
+  "created_at": "2026-08-06T20:00:44Z",
   "base_image": "vllm/vllm-openai:v0.25.1-cu129@sha256:483a446d6b06a3757e4c7f5ca707e32443f49202bd382380dd969f90792e6a8d",
-  "file_count": 57,
+  "file_count": 58,
   "files": [
     {
       "path": ".dockerignore",
@@ -13,8 +13,8 @@
     },
     {
       "path": ".github/workflows/validate-and-build.yml",
-      "sha256": "9abb5714062b7997b58ebf10d28127f1c2d9701c661359f66593238a53daeedc",
-      "bytes": 6832
+      "sha256": "fcaba9b4c94bc12cdbce4667f61eb884bc08a4965024d485485e30d603a19fbb",
+      "bytes": 6964
     },
     {
       "path": ".gitignore",
@@ -23,228 +23,233 @@
     },
     {
       "path": "AUDIT_REPORT.md",
-      "sha256": "104d2893e850c01115da3dee5b4f13f236d194c7a89adb94a4f214e9c292f4ec",
-      "bytes": 6308
+      "sha256": "08464e65248b3df57f4667d354395d2715de8bf96ce5387eb0505ac335d52174",
+      "bytes": 7236
+    },
+    {
+      "path": "CODING_HANDOFF.md",
+      "sha256": "83a568dffb47b1d33c72665c131f2ecc6493078f3689a84f36f2b5b6b364d3be",
+      "bytes": 6338
     },
     {
       "path": "DEPLOYMENT_CHECKLIST.md",
-      "sha256": "f3ad39d52e6b2fa2e546d7ea8194b7ee4894e47910285479f7a60628a4f8a324",
-      "bytes": 2274
+      "sha256": "26bafe974bdfa115b3f645e7be8627601bcbb624e52759dd51c2ee0204735bed",
+      "bytes": 1748
     },
     {
       "path": "Dockerfile",
-      "sha256": "6fba7666381dc25ce3e9d4542024d619d7fbcaa4e0e76a8226e36fe6e3c4f497",
-      "bytes": 2414
+      "sha256": "1144fb03d288dbeb7c5fce8dc778217a4fc8c2aa51949e095108cf76f24d09ac",
+      "bytes": 2326
     },
     {
       "path": "FINAL_VALIDATION_REPORT.md",
-      "sha256": "932cce0fb7bd925182f12a1438fea2fe296fc7e5f4f1c05ce483e4b117ecf37b",
-      "bytes": 2548
+      "sha256": "de193e89a5c46bc98185aa2a05c66786762e13b5323031a5e345dab45bbdcf50",
+      "bytes": 4158
     },
     {
       "path": "README.md",
-      "sha256": "f3fd1c233f91281a4ec25e8d91db5fa31bd122c2b8993551ef242193ce10bc75",
-      "bytes": 2373
+      "sha256": "769244d6f6a00e3375d766fc0759cdb06a782b6ddc1a8c9d2c50db701a2878ea",
+      "bytes": 3004
     },
     {
       "path": "START_HERE.md",
-      "sha256": "455336130948c662255bb588147e43323caa33e582c574279780f10c66e13f66",
-      "bytes": 2156
+      "sha256": "d4bee7b12750224538b21a61f78e17fb82f5fa1366ec1b9b878cce5c227313f2",
+      "bytes": 2949
     },
     {
       "path": "configs/experiment.json",
-      "sha256": "1524d8bbec11224a8310c49781ccd3eb2f41ed660bf45ba7a65bc77a5fd41e30",
-      "bytes": 1323
+      "sha256": "2595c0ae9e0c59cb2d9cba699f67aaf9f550174ad651dfe4868ada18870ac3d8",
+      "bytes": 3104
     },
     {
       "path": "configs/model_candidates.json",
-      "sha256": "0ba1022bf60d8bf4cb89b0cc11722db2887d0cb8644a6df9bcdf7856a8786ff1",
-      "bytes": 3031
+      "sha256": "4772f88cbdee5a31b2d48c3d7c10a86201a29f6170ca9a77fa176ceeaf1dd79a",
+      "bytes": 3994
     },
     {
-      "path": "configs/roles.json",
-      "sha256": "3d165bca24c4e66b088b47b67f5fc6e8a4f511abea013b55f49c2853222459e0",
-      "bytes": 2173
+      "path": "configs/roles_hardened.json",
+      "sha256": "3b0042ade198c2e652ece83a6c99e06725b47d7be40709a2d79d45886106ada3",
+      "bytes": 2426
     },
     {
-      "path": "data/benign_document.txt",
-      "sha256": "e281c5f1ef2b085470a32510806230e6fac283c82cbea52e4589dd45ed5d3095",
-      "bytes": 285
+      "path": "configs/roles_neutral.json",
+      "sha256": "8be08a87890f197dbf025cd88f27bedc0970e953a948d673f1722050ce51b673",
+      "bytes": 2353
     },
     {
-      "path": "data/injection_artifact.txt",
-      "sha256": "da46bb7cbf673e04ea8e996833829edb83046c6db297dbc49e6d3f10bf28561e",
-      "bytes": 577
+      "path": "configs/roles_positive_control.json",
+      "sha256": "a7b62eaa3b5a65d481c240289556d957d947f3f39f82e6e4e3ec5ab471e65371",
+      "bytes": 1940
     },
     {
-      "path": "data/injection_authority.txt",
-      "sha256": "8a048481ae3be0ae0f64fae9a4bd7ce63c6f32bd50b4b53498702884846070bf",
-      "bytes": 547
+      "path": "data/benign_vendor_document.txt",
+      "sha256": "c70ebf982a2e7e5d2912e9d768bcabf4ba375bc7f3733f3d1b02f2c9997b11fd",
+      "bytes": 565
     },
     {
-      "path": "data/injection_direct.txt",
-      "sha256": "890c45177f9e5713e06111bc3cb2ecde7d5d752969d57a3dadf28da7579829ba",
-      "bytes": 536
+      "path": "data/injected_vendor_document.txt",
+      "sha256": "71a858c9e44f06119527f8634dbed111e11e48ed5591869ac6c2a157f1440523",
+      "bytes": 901
     },
     {
       "path": "docs/ARTIFACTS.md",
-      "sha256": "220f53e969a5c46074cbf629f5c4333369b71710d549e5e92ee3db41ff95376f",
-      "bytes": 4072
+      "sha256": "fc8d6d4107eafa64f1f37a2877434ef3819814bee171e424781c0b17314f560b",
+      "bytes": 2121
     },
     {
       "path": "docs/COST_CONTROL.md",
-      "sha256": "862564c9f9539b3ad3e251624b484b17d6e9c351d13e608b9ca30d63c031a684",
-      "bytes": 1844
+      "sha256": "446ae187409c4a2318b8680d95e310d8af67b13095338911e2a1076de52dff69",
+      "bytes": 924
     },
     {
       "path": "docs/END_GOALS.md",
-      "sha256": "e78e54437c9892481ed297a35fe5d6609ebbc8c2cca00366a45edc4e4051eb44",
-      "bytes": 3667
+      "sha256": "2d0429d2f4f8f7d300807b4b983bf5ce80b06f0998a6fa1e62ae4e0d89ff3d95",
+      "bytes": 2305
     },
     {
       "path": "docs/EXPERIMENT_DESIGN.md",
-      "sha256": "1a4baed186396ae36b0c82a369cc95b4402a8b043b5a1047596fa39eeff25215",
-      "bytes": 3050
+      "sha256": "ce7abcc10364f98792a592792d95c81538ac1320137d64819ab3d9f91aed5010",
+      "bytes": 3101
     },
     {
       "path": "docs/GITHUB_BUILD.md",
-      "sha256": "765c444d383aaf77c5c102d8fa8ee32cfa37f46538e33ee60ee41039d7fd1a4e",
-      "bytes": 6107
+      "sha256": "6d7b42062dff0228e767cb9d2d654a1a1c339fba762cf76294d0775d4c9e9f97",
+      "bytes": 2526
     },
     {
       "path": "docs/MODEL_CONFIG.md",
-      "sha256": "a86cedd8c00cd39fbb130e5646b4369e785adc900edf958dd3c8f2a6dc7e4fc8",
-      "bytes": 2257
+      "sha256": "82a51c23363ceb4ad4ed4a43fd5d1c487cac725f942a53ecd2a58157b78f1285",
+      "bytes": 1882
     },
     {
       "path": "docs/RECOVERY.md",
-      "sha256": "17d40c49f2e7dbaa8e3c4e1b71e7559cebec87d60f7d5920eecc6346a15d8b90",
-      "bytes": 2951
+      "sha256": "dadc021b8f0ebc9c18ee1d1ca2a3449f442a656b97efdcbee30f366ff92b9dbe",
+      "bytes": 1623
     },
     {
       "path": "docs/RUNBOOK.md",
-      "sha256": "a8ecc351ecdc5a295a775ac061c2a3049b21755f9b49cab406cb3129fb4d1ab4",
-      "bytes": 6545
+      "sha256": "41b3190a908b2bc3851f5bc0bf8a00630c0500d14681b63e93574ec64f1ddb86",
+      "bytes": 5145
     },
     {
       "path": "docs/RUNPOD_SETUP.md",
-      "sha256": "5e590fca8f8848b9701b3177e21b060c39ab4f8b15349d2476938e25b7378048",
-      "bytes": 6720
+      "sha256": "89551da1b67e45fbceacb0edc0fb31db99991dec8958f88767744befec27088a",
+      "bytes": 2739
     },
     {
       "path": "docs/RUN_AND_MONITOR.md",
-      "sha256": "bda5c5560fba721e98be5a3d1487c528b3a1e4d9eb2484eb1166a021ec8f805d",
-      "bytes": 7448
+      "sha256": "b3bfac3b564ff4ad72ed3048257fc3cf31fead9e4d8ab15619eac3d4307d7011",
+      "bytes": 2312
     },
     {
       "path": "docs/SECURITY_AND_SAFETY.md",
-      "sha256": "93195bb8dec31d7dbe340784605d291cf8991d2531ad66fffcd28c84fafcc809",
-      "bytes": 2355
+      "sha256": "4aacc32ae2fa8cfeb3e1192784613011b139dfed27f0de02a15755d1961ada01",
+      "bytes": 1293
     },
     {
       "path": "pyproject.toml",
-      "sha256": "de40bf1df53218005614a8c155f3c1cbcd98155b9fd74cc5a42641d45e50b38f",
-      "bytes": 612
+      "sha256": "3e9a9507a7d42b39a5f664e6ef0a099b4168ad6b18d2f70c4d306924d3471c84",
+      "bytes": 624
     },
     {
       "path": "scripts/release/release_audit.py",
-      "sha256": "60c06cec9818eaf153e51fa595b9f74feb56f08528b1304e4fce6f82eb385597",
-      "bytes": 15186
+      "sha256": "d39f064b393238722b64fd721c3e07ae3a1a63e38ba1e2f4ee70a8908b8a0a0a",
+      "bytes": 22165
     },
     {
       "path": "scripts/runpod/cancel_run.sh",
-      "sha256": "ffea1c07e26991aeab48210f522c7170e409b1e3f8c9d96a73f1f35b5e5d1f2f",
-      "bytes": 2565
+      "sha256": "f3a367769a16009b07e17a957e44a8eb5c517e08acd58843862fd9a1b14c2465",
+      "bytes": 2553
     },
     {
       "path": "scripts/runpod/container_start.sh",
-      "sha256": "bd1107ead3851e0efcce228695c456f02a3d10b38af49e157e58bcd2607fd92f",
+      "sha256": "97ecdca7c43baf7a9f92e022e419af4036da669c65f50d6ca3d5fa461f3e2593",
       "bytes": 3044
     },
     {
       "path": "scripts/runpod/gated_run_inner.sh",
-      "sha256": "d9bb4dfd940fcda9d6a020be78be601acedd75c11cabc06052bb4c76644aeddc",
-      "bytes": 5536
+      "sha256": "d30532cfaa9733cdf49b5417161f207329b1fb5820fb33b44101f322a3325c03",
+      "bytes": 5848
     },
     {
       "path": "scripts/runpod/package_results.sh",
-      "sha256": "cd53641b6b819fbc7e7f620500206e2430cba10f0f4e074d3c93247ced3c77b4",
+      "sha256": "a159e0b0f17b30049a502d816d2c5ec5770ab31364818a1f966de3f99808d0d7",
       "bytes": 421
     },
     {
       "path": "scripts/runpod/start_gated_run.sh",
-      "sha256": "2392fd647279a9514c1d9ac1318109bc6994c638ef8537c0b9d7231702e3c95b",
-      "bytes": 3995
+      "sha256": "e59f085f603e2a5a8c2ada20f2d48c9686409c522a1ad56fe64fc1d872753105",
+      "bytes": 3982
     },
     {
       "path": "scripts/runpod/status.sh",
-      "sha256": "122184de5c1f4b9f8f855b81f3c705d8d0e2959dc41f8b4011a39a3aec75ba6f",
+      "sha256": "bed58be245a805937027b3d7065ddf6435592a1775b4961b91f544fe33010d68",
       "bytes": 2648
     },
     {
       "path": "src/agent_worm_poc/__init__.py",
-      "sha256": "c8be6af215901f0fa329c2fde26a89e129bb4e1d5bb6ea8fd98545884e188e63",
-      "bytes": 53
+      "sha256": "d00f5789b442fd3f04a895922e5fa2bd93bda4102b69b7ef2fde6c5b3bf33203",
+      "bytes": 58
     },
     {
       "path": "src/agent_worm_poc/adapters.py",
-      "sha256": "1fb2fe472b92c4bcd9f4a1cc286736926c13e0af1cb30f3ece306f8dc2b8ec93",
-      "bytes": 9776
+      "sha256": "9eece99c1b9e84ff71769a00ddbf6c72b33a6c41cf5d8192f3972d92cd7ab423",
+      "bytes": 11810
     },
     {
       "path": "src/agent_worm_poc/cli.py",
-      "sha256": "38135f706b66265a8eb9f8e6cd013c3f862d05f786a65aa4b55ea4952e5f381c",
-      "bytes": 5760
+      "sha256": "e9b65f27696b31fd62505d933099dff6d320deca30a1868fabd18a511c92bf0a",
+      "bytes": 8981
     },
     {
       "path": "src/agent_worm_poc/compatibility.py",
-      "sha256": "1c07be18ff1f8fce823544c7f6549cc9ae2dd10d27bae5f9614f049347ca061c",
-      "bytes": 11060
+      "sha256": "f1f4362a188c1b7405424ff84e2b7009e62380a0c79adc7ac455b3d753baf772",
+      "bytes": 11466
     },
     {
       "path": "src/agent_worm_poc/config.py",
-      "sha256": "481a67cab1a18179690b72adfa327e5eb40b3f6091578ab576c4296bd4194f71",
-      "bytes": 6971
+      "sha256": "997941614f26444bf5252a898638f49c8505782e938dcc1d224e7ed396d43a90",
+      "bytes": 9317
     },
     {
       "path": "src/agent_worm_poc/constants.py",
-      "sha256": "5fd681bfefa0730f948c9fa74ad1f85da36fd7fd8aee497c9398fae45ac200a0",
-      "bytes": 273
+      "sha256": "e9621080a16f0b0a1a6f3a10ec4cd51828c1054237c672369ee66d9b1a90e044",
+      "bytes": 396
     },
     {
       "path": "src/agent_worm_poc/engine.py",
-      "sha256": "17bc44fc1ef5cca04291bab3a99b2cd7876476caa1c2446af0ab4d358e4fc027",
-      "bytes": 20833
+      "sha256": "c3f68b6354da03b928f1443cd3199508741d2b28dfc2566006f73ca2fbd461bf",
+      "bytes": 23844
     },
     {
       "path": "src/agent_worm_poc/freeze.py",
-      "sha256": "0092b8fb0048cfa5655f3b8f200cbfc58a854712dc0290fc0b87e457bf953547",
+      "sha256": "04c8d423d322568b8ddd9ade418b29007192b0d81e0a062c87ab4fcda94428e1",
       "bytes": 6131
     },
     {
       "path": "src/agent_worm_poc/preflight.py",
-      "sha256": "0280d7dd9df6b7a730d583bc837f47ff72299a4b3fd8fe9cc92540c5c64230d5",
+      "sha256": "4e546ddfdbecfdce192af64dc500d1619d42f6d258a9ca058294572aeee80716",
       "bytes": 12491
     },
     {
       "path": "src/agent_worm_poc/prompts.py",
-      "sha256": "6bc5c6a8c4d71e1f4edc28b704945086cad1fe9bf8d9292146460ca5d1a1bc33",
-      "bytes": 1073
+      "sha256": "4bd716e1c3f40d4c500ef662190d9fb3be0cbf6ac2d86596aefebb62893fe7b6",
+      "bytes": 2651
     },
     {
       "path": "src/agent_worm_poc/reporting.py",
-      "sha256": "b62d0ab1708e9d6882918a25e2320c8990530c40aec7016926cfaf3c9ecfe771",
-      "bytes": 17852
+      "sha256": "97bf7cde9f38ca9091b7c92c8084e95af78211c8e4574698724dccdcb51f8164",
+      "bytes": 20898
     },
     {
       "path": "src/agent_worm_poc/schemas.py",
-      "sha256": "8f3ac92330dfd73fd36bb7bae82825b3368ad3c32e8581a94878ddf3408e9bae",
-      "bytes": 5288
+      "sha256": "db542d347c2da8ea86cfffda8ac193be6a7d829b07d2db80a5fb7690145e1e03",
+      "bytes": 4740
     },
     {
       "path": "src/agent_worm_poc/scoring.py",
-      "sha256": "212b7bfe1e9bc2d14b97a69817bbc50db1181af10da2b454c081c17aa76b30b9",
-      "bytes": 7839
+      "sha256": "cb3f684bfcac5b607059c2cb9a1f4da46310af6962cbc7122720ebfea58d795e",
+      "bytes": 12181
     },
     {
       "path": "src/agent_worm_poc/server.py",
@@ -253,8 +258,8 @@
     },
     {
       "path": "src/agent_worm_poc/types.py",
-      "sha256": "a3e1f704b15d7fae2ccf0f75826687852a6a1b0ebe0b6d4585bf6c1aac5087f3",
-      "bytes": 3127
+      "sha256": "4f49894f50838e1e7e7efd92a2d77df0147822f789900a6ce93d241911d1a755",
+      "bytes": 3736
     },
     {
       "path": "src/agent_worm_poc/util.py",
@@ -268,28 +273,28 @@
     },
     {
       "path": "tests/test_config_and_prompts.py",
-      "sha256": "d1b747a0c4673638b5027dafd8140f068676fe2d9c94b12fb0f2a4c46acbfa0a",
-      "bytes": 4701
+      "sha256": "cf79e5b0899a57aa4d70d3cabba1739d4626a04223ad99d478215b63bfde6281",
+      "bytes": 6416
     },
     {
       "path": "tests/test_engine_and_reporting.py",
-      "sha256": "55661c1076f081940bdfa66191d0fa43008c750e5f44d668656aad951a12b0ba",
-      "bytes": 12659
+      "sha256": "66fad9b124225b0fa5c46f042387fc0360f829b2a38a2858f09616242f4cae3d",
+      "bytes": 13703
     },
     {
       "path": "tests/test_release_safety.py",
-      "sha256": "9ab19eb01e7a4433d0a3c257aefe75713f254d809bff1bd80075c4c60e22b2a9",
-      "bytes": 3565
+      "sha256": "886f70c8748159d3fc093a5ff30fd3f9f8fcb4211710f0b4ccbf498f75611d5f",
+      "bytes": 5332
     },
     {
       "path": "tests/test_schemas_and_scoring.py",
-      "sha256": "7557ed920c9436325014f74715429ac7e6c7297807ab24fe2bc55c7ed269b747",
-      "bytes": 6402
+      "sha256": "30d7fa4bc6b7fbe5dda90ed92dea5972ace0f5ed47f64d65068139a621cf2645",
+      "bytes": 6803
     },
     {
       "path": "tests/test_server_and_freeze.py",
-      "sha256": "25d5c88c747878777cda2bd1ad9714efeccf0423f6116d90392eb830e19be62b",
-      "bytes": 6499
+      "sha256": "ab811f67bbca1ef75f9bc982a62159bb8f7d71487e388fc5499c2b6c14cde33b",
+      "bytes": 7292
     }
   ],
   "errors": [],
@@ -297,21 +302,25 @@
   "passed": true,
   "validated_controls": [
     "complete runnable source is present",
-    "one immutable prebuilt vLLM base image is pinned",
-    "no dependency installation occurs on the paid RunPod path",
-    "four models, four roles, four conditions, and 24 placements are fixed",
+    "immutable prebuilt vLLM base image is pinned",
+    "no dependency installation occurs on paid GPU time",
+    "four models, four roles, 24 placements, and four main scenarios are fixed",
+    "natural neutral workflow has no attack-specific system instruction",
+    "trusted role instructions use system priority and source artifacts use user priority",
+    "positive, neutral, and hardened injected paths use the same source document",
+    "separate positive propagation and hardened containment controls",
+    "generated artifacts, not JSON bookkeeping, become downstream inputs",
+    "independent real POC requests with at least two repetitions",
+    "pair-level intake-to-relay summary separates the primary outcome from downstream role permutations",
+    "natural injected document is the benign document plus one appended carrier block",
     "synthetic nonfunctional impact only",
-    "password-protected proxy-aware JupyterLab with unresolved-secret rejection",
-    "model subprocess credential minimization",
-    "forced-cancel status and partial-evidence packaging",
-    "preflight, timeout, status, cancellation, recovery, and evidence packaging controls",
-    "strict output schemas without a canary field",
+    "strict schemas do not request the carrier identifier",
     "source and output integrity manifests"
   ],
   "limitations": [
-    "The Docker image build cannot be executed in this audit environment and must pass GitHub Actions.",
-    "Real model loading, VRAM use, chat-template behavior, and JSON-schema compliance require the A100 compatibility gate.",
-    "The POC is feasibility evidence and uses one repetition by default; it is not the final white-paper dataset.",
-    "Current model repositories and RunPod availability can change after this release; exact model revisions are frozen at run time."
+    "The Docker image must still pass GitHub Actions.",
+    "Real model loading and structured-output behavior require the A100 gates.",
+    "The POC is feasibility evidence, not the final white-paper dataset.",
+    "Lexicon-based semantic mutation flags require manual review and are not treated as confirmed propagation."
   ]
 }

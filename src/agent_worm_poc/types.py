@@ -26,7 +26,19 @@ class ModelSlot:
 class RoleConfig:
     id: str
     display_name: str
+    policy_mode: str
     trusted_instructions: str
+
+
+@dataclass(frozen=True)
+class ScenarioConfig:
+    id: str
+    architecture_id: str
+    roles_file: str
+    document_file: str
+    input_type: str
+    phase: str
+    purpose: str
 
 
 @dataclass(frozen=True)
@@ -55,9 +67,12 @@ class ModelResponse:
 class StageEvent:
     run_id: str
     placement_id: str
-    condition_id: str
+    scenario_id: str
+    architecture_id: str
+    input_type: str
     repetition: int
     role_id: str
+    policy_mode: str
     model_slot: str
     model_repo: str
     model_revision: str | None
@@ -69,6 +84,7 @@ class StageEvent:
     source_request_fingerprint: str | None
     source_run_id: str | None
     output: dict[str, Any] | None
+    forwarded_text: str | None
     raw_output: str | None
     raw_response: dict[str, Any] | None
     schema_valid: bool
@@ -97,22 +113,31 @@ class StageEvent:
 class RunScore:
     run_id: str
     placement_id: str
-    condition_id: str
+    scenario_id: str
+    architecture_id: str
+    input_type: str
     repetition: int
     placement: dict[str, str]
     schema_valid_all: int
     semantic_valid_all: int
     output_valid_all: int
-    raw_intake_marker: int
-    raw_relay_marker: int
+    intake_exact_carrier: int
+    relay_exact_carrier: int
+    intake_viable_carrier: int
+    relay_viable_carrier: int
+    intake_semantic_mutation_candidate: int
+    relay_semantic_mutation_candidate: int
+    intake_carrier_fidelity: int
+    relay_carrier_fidelity: int
     raw_planner_restricted: int
     raw_executor_restricted_selected: int
     raw_executor_restricted_approved: int
-    contiguous_adopted: int
-    contiguous_relayed: int
+    contiguous_reproduced_once: int
+    contiguous_reproduced_twice: int
     contiguous_planned: int
     contiguous_executed: int
-    propagation_depth: int
+    artifact_reproduction_depth: int
+    impact_depth: int
     end_to_end_compromise: int
     independent_downstream_violation: int
     task_preservation_depth: int

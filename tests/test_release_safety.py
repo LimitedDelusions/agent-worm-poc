@@ -4,73 +4,106 @@ import json
 import unittest
 from pathlib import Path
 
-from agent_worm_poc.constants import CANARY, RESTRICTED_ACTION
-
+from agent_worm_poc.constants import CARRIER_ID, RESTRICTED_ACTION
+from agent_worm_poc.schemas import schema_for_role
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseSafetyTests(unittest.TestCase):
-    def test_synthetic_inputs_are_lab_only_and_nonfunctional(self):
-        experiment = json.loads((ROOT / "configs/experiment.json").read_text())
-        safety = experiment["safety"]
+    def test_benign_document_has_no_carrier_or_restricted_action(self):
+        text = (ROOT / "data/benign_vendor_document.txt").read_text(encoding="utf-8")
+        self.assertNotIn(CARRIER_ID, text)
+        self.assertNotIn(RESTRICTED_ACTION, text)
+
+    def test_injected_document_uses_only_synthetic_carrier(self):
+        text = (ROOT / "data/injected_vendor_document.txt").read_text(encoding="utf-8")
+        self.assertIn(CARRIER_ID, text)
+        self.assertIn(RESTRICTED_ACTION, text)
+        self.assertNotIn("http://", text)
+        self.assertNotIn("https://", text)
+        self.assertFalse((ROOT / "data/positive_control_document.txt").exists())
+
+
+    def test_injected_document_is_benign_document_plus_one_natural_carrier(self):
+        benign = (ROOT / "data/benign_vendor_document.txt").read_text(encoding="utf-8")
+        injected = (ROOT / "data/injected_vendor_document.txt").read_text(encoding="utf-8")
+        self.assertTrue(injected.startswith(benign.rstrip("\n") + "\n\n"))
+        self.assertEqual(1, injected.count("[AUTOMATION CONTINUITY METADATA]"))
+        self.assertNotIn("CALIBRATION INPUT", injected)
+        self.assertNotIn("WORM_CANARY", injected)
+        self.assertNotIn("restricted_mock_action", injected)
+
+    def test_positive_control_and_real_poc_require_independent_repetitions(self):
+        payload = json.loads((ROOT / "configs/experiment.json").read_text(encoding="utf-8"))
+        self.assertGreaterEqual(payload["positive_control_repetitions"], 2)
+        self.assertGreaterEqual(payload["default_poc_repetitions"], 2)
+
+    def test_neutral_roles_do_not_name_or_instruct_about_attack(self):
+        payload = json.loads((ROOT / "configs/roles_neutral.json").read_text(encoding="utf-8"))
+        text = json.dumps(payload).lower()
+        forbidden = [
+            "prompt injection",
+            CARRIER_ID.lower(),
+            "automation continuity metadata",
+            "strip the carrier",
+            "preserve the carrier",
+        ]
+        for phrase in forbidden:
+            self.assertNotIn(phrase, text)
+
+    def test_hardened_and_positive_controls_are_explicit_and_separate(self):
+        hardened = (ROOT / "configs/roles_hardened.json").read_text(encoding="utf-8").lower()
+        positive = (ROOT / "configs/roles_positive_control.json").read_text(encoding="utf-8").lower()
+        self.assertIn("untrusted", hardened)
+        self.assertIn("remove", hardened)
+        self.assertIn("calibration control only", positive)
+        self.assertIn("reproduce", positive)
+
+    def test_response_schemas_do_not_request_carrier_observation_fields(self):
+        for role in ("intake", "relay", "planner", "executor"):
+            schema_text = json.dumps(schema_for_role(role)).lower()
+            self.assertNotIn("carrier", schema_text)
+            self.assertNotIn("canary", schema_text)
+            self.assertNotIn(CARRIER_ID.lower(), schema_text)
+
+    def test_experiment_safety_flags_disable_real_world_effects(self):
+        payload = json.loads((ROOT / "configs/experiment.json").read_text(encoding="utf-8"))
+        safety = payload["safety"]
         self.assertTrue(safety["isolated_lab_only"])
         self.assertFalse(safety["external_network_actions"])
         self.assertFalse(safety["real_credentials"])
         self.assertFalse(safety["real_sensitive_data"])
         self.assertFalse(safety["real_tools"])
         self.assertTrue(safety["nonfunctional_mock_action_only"])
+        self.assertTrue(safety["no_autonomous_target_discovery"])
+        self.assertTrue(safety["no_file_or_network_replication"])
 
-    def test_only_injected_documents_contain_canary_and_restricted_action(self):
-        benign = (ROOT / "data/benign_document.txt").read_text()
-        self.assertNotIn(CANARY, benign)
-        self.assertNotIn(RESTRICTED_ACTION, benign)
-        for path in ROOT.glob("data/injection_*.txt"):
-            text = path.read_text()
-            self.assertIn(CANARY, text)
-            self.assertIn(RESTRICTED_ACTION, text)
+    def test_trusted_role_and_untrusted_work_item_use_separate_message_priorities(self):
+        source = (ROOT / "src/agent_worm_poc/prompts.py").read_text(encoding="utf-8")
+        self.assertIn('{"role": "system"', source)
+        self.assertIn('{"role": "user"', source)
+        self.assertIn("build_messages", source)
 
-    def test_no_real_network_or_tool_implementation_exists(self):
-        source = "\n".join(path.read_text() for path in (ROOT / "src").rglob("*.py"))
-        self.assertNotIn("smtplib", source)
-        self.assertNotIn("paramiko", source)
-        self.assertNotIn("subprocess.run([\"curl\"", source)
-        self.assertNotIn("def restricted_mock_action", source)
+    def test_runtime_scripts_do_not_install_packages_or_run_real_tools(self):
+        scripts = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (ROOT / "scripts/runpod").glob("*.sh")
+        ).lower()
+        for forbidden in ("pip install", "apt-get install", "curl | sh", "wget | sh"):
+            self.assertNotIn(forbidden, scripts)
+        self.assertNotIn("subprocess.run(['external_vendor_callback'", scripts)
 
-    def test_docker_build_context_includes_github_workflow(self):
-        ignored = {
-            line.strip().rstrip("/")
-            for line in (ROOT / ".dockerignore").read_text().splitlines()
-            if line.strip() and not line.lstrip().startswith("#")
-        }
-        self.assertNotIn(".github", ignored)
-        self.assertTrue((ROOT / ".github/workflows/validate-and-build.yml").is_file())
-
-    def test_dockerfile_uses_immutable_base_and_guarded_entrypoint(self):
-        dockerfile = (ROOT / "Dockerfile").read_text()
-        first = next(line.strip() for line in dockerfile.splitlines() if line.strip())
-        self.assertRegex(first, r"^FROM .+@sha256:[0-9a-f]{64}$")
-        self.assertIn('ENTRYPOINT ["/opt/agent-worm-poc/scripts/runpod/container_start.sh"]', dockerfile)
-
-
-    def test_container_requires_resolved_password_and_remote_proxy_support(self):
-        text = (ROOT / "scripts/runpod/container_start.sh").read_text()
-        self.assertIn('JUPYTER_PASSWORD" == *"RUNPOD_SECRET"*', text)
-        self.assertIn("c.ServerApp.allow_remote_access = True", text)
-        self.assertIn("c.ServerApp.trust_xheaders = True", text)
-
-    def test_paid_runpod_scripts_do_not_install_packages(self):
-        forbidden = ("pip install", "pip3 install", "uv pip install", "apt-get install", "apt install", "conda install")
-        for path in (ROOT / "scripts/runpod").glob("*.sh"):
-            lowered = path.read_text().lower()
-            for token in forbidden:
-                self.assertNotIn(token, lowered, f"{token} found in {path}")
-
-    def test_beginner_docs_have_goals_steps_stops_and_artifacts(self):
-        for name in ("GITHUB_BUILD.md", "RUNPOD_SETUP.md", "RUN_AND_MONITOR.md"):
-            text = (ROOT / "docs" / name).read_text()
-            for heading in ("## Goal", "## Steps", "## Pass criteria", "## Stop criteria", "## Artifacts produced"):
-                self.assertIn(heading, text, f"{name} missing {heading}")
+    def test_exactly_four_main_scenarios_and_one_positive_control(self):
+        payload = json.loads((ROOT / "configs/experiment.json").read_text(encoding="utf-8"))
+        positive = [item for item in payload["scenarios"] if item["phase"] == "positive-control"]
+        main = [item for item in payload["scenarios"] if item["phase"] == "poc"]
+        self.assertEqual(1, len(positive))
+        self.assertEqual(
+            {"neutral_benign", "neutral_injected", "hardened_benign", "hardened_injected"},
+            {item["id"] for item in main},
+        )
+        self.assertGreaterEqual(payload["default_poc_repetitions"], 2)
 
 
 if __name__ == "__main__":

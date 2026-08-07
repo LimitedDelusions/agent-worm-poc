@@ -1,54 +1,48 @@
-# Deployment Checklist
+# Deployment Checklist — v0.7.0
 
-## A. Free pre-deployment gate
+## Before coding handoff
 
-- [ ] I am using v0.6.0, not an older archive.
-- [ ] The complete project was uploaded to GitHub, including `.github/workflows`.
-- [ ] GitHub Actions job **validate** passed.
-- [ ] GitHub Actions job **build** passed.
-- [ ] I preserved the GitHub workflow run URL or downloaded validation artifact as the build record.
-- [ ] I downloaded `agent-worm-poc-container-reference`.
-- [ ] `RUNPOD_IMAGE.txt` contains `ghcr.io/...@sha256:<64 hex characters>`.
-- [ ] The GHCR package is public and pullable.
+- [ ] v0.7.0 ZIP SHA-256 matches the supplied sidecar.
+- [ ] The archive extracts into a clean `agent_worm_poc_v0.7.0` directory.
+- [ ] `CODING_HANDOFF.md` has been provided to the coding workspace.
 
-**Stop if any box above is unchecked. Do not rent a GPU.**
+## Before GitHub push
 
-## B. RunPod account/template gate
+- [ ] Old v0.6 files were removed rather than overlaid.
+- [ ] `.github`, `.dockerignore`, and `.gitignore` were copied.
+- [ ] Compilation passes.
+- [ ] All tests pass.
+- [ ] Shell syntax passes.
+- [ ] `release_audit.py` reports `passed: true`.
+- [ ] Fake positive control reaches artifact depth 2.
+- [ ] Fake main POC completes 24 placements × 4 scenarios with no reuse or invalid output.
 
-- [ ] RunPod secret `huggingface_token` exists.
-- [ ] RunPod secret `jupyter_password` exists and is at least 16 characters.
-- [ ] The template references both secrets using `{{ RUNPOD_SECRET_... }}` and does not contain the plain token or password.
-- [ ] The template uses the exact image digest, not a tag.
-- [ ] Container disk is 80 GB.
-- [ ] Volume disk is 300 GB and mounted at `/workspace`.
-- [ ] HTTP port 8888 is exposed.
-- [ ] `HF_HOME=/workspace/hf-cache`.
-- [ ] `AGENT_WORM_IMAGE_REF` exactly matches `RUNPOD_IMAGE.txt`.
-- [ ] `AGENT_WORM_MAX_RUNTIME=6h`.
-- [ ] `POC_REPETITIONS=1`.
-- [ ] Docker command and entrypoint overrides are blank.
+## Before RunPod
 
-## C. GPU gate
+- [ ] GitHub `validate` job is green.
+- [ ] GitHub `build` job is green.
+- [ ] Exact GHCR `@sha256:` reference is saved.
+- [ ] RunPod template uses that exact digest, not `:latest` or `:0.7.0`.
+- [ ] Hugging Face and Jupyter secrets are configured.
+- [ ] One A100 80 GB GPU is selected.
+- [ ] `/workspace` has adequate persistent storage.
+- [ ] Total hourly price is recorded in `RUNPOD_HOURLY_RATE`.
+- [ ] `POC_REPETITIONS` is 2–5; default 3.
 
-- [ ] One A100 PCIe 80 GB or A100 SXM 80 GB is selected.
-- [ ] Rental type is On-Demand.
-- [ ] I recorded the total displayed hourly rate.
-- [ ] I did not select four GPUs.
-- [ ] I did not select an H100 merely for this POC.
+## Before starting the gated run
 
-## D. Run gate
+- [ ] Container says v0.7.0 is ready.
+- [ ] `/workspace/agent_worm_poc_v0.7.0` exists.
+- [ ] `AGENT_WORM_IMAGE_REF` contains the exact digest.
+- [ ] No older gated run is active.
 
-- [ ] Container logs say v0.6.0 is ready and report no unresolved-secret or source-integrity error.
-- [ ] JupyterLab opened on port 8888 and required my password.
-- [ ] `/workspace/agent_worm_poc_v0.6.0` exists.
-- [ ] I set `RUNPOD_HOURLY_RATE` to the displayed total hourly price.
-- [ ] I started `scripts/runpod/start_gated_run.sh` once.
-- [ ] I use `scripts/runpod/status.sh` to monitor.
-- [ ] I will use `scripts/runpod/cancel_run.sh` before stopping the Pod if needed.
+## Before terminating the Pod
 
-## E. Evidence and billing gate
-
-- [ ] `status.sh` reports `NOT RUNNING`.
-- [ ] I downloaded the result ZIP and `.sha256` file.
-- [ ] I confirmed the ZIP opens or its hash verifies.
-- [ ] I terminated the Pod after preserving the files.
+- [ ] Gated process is no longer running.
+- [ ] Result ZIP exists.
+- [ ] Result `.sha256` exists.
+- [ ] Both files were downloaded locally.
+- [ ] Local SHA-256 verification succeeds.
+- [ ] Extracted package contains `ARTIFACT_INDEX.md` and `PACKAGE_MANIFEST.json`.
+- [ ] `outputs/NEXT_MEETING_SUMMARY.md` was reviewed.
+- [ ] Pod is terminated after verification.

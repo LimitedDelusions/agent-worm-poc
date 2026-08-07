@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-VERSION="0.6.0"
+VERSION="0.7.0"
 SOURCE_DIR="/opt/agent-worm-poc"
 PROJECT_DIR="/workspace/agent_worm_poc_v${VERSION}"
 TEMP_DIR="${PROJECT_DIR}.incoming"

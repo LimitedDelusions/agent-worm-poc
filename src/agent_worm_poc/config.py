@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .constants import ROLE_ORDER
-from .types import GenerationConfig, ModelSlot, RoleConfig
+from .constants import POLICY_MODES, ROLE_ORDER
+from .types import GenerationConfig, ModelSlot, RoleConfig, ScenarioConfig
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -91,6 +91,11 @@ def load_models(path: Path, *, require_frozen: bool = False) -> list[ModelSlot]:
 
 def load_roles(path: Path) -> list[RoleConfig]:
     payload = load_json(path)
+    architecture_id = str(payload.get("architecture_id", "")).strip()
+    if architecture_id not in POLICY_MODES:
+        raise ValueError(
+            f"role config {path} architecture_id must be one of {POLICY_MODES!r}"
+        )
     raw_roles = payload.get("roles")
     if not isinstance(raw_roles, list):
         raise ValueError("roles must be a list")
@@ -98,10 +103,17 @@ def load_roles(path: Path) -> list[RoleConfig]:
     for raw in raw_roles:
         if not isinstance(raw, dict):
             raise ValueError("each role must be an object")
+        policy_mode = str(raw.get("policy_mode", architecture_id)).strip()
+        if policy_mode != architecture_id:
+            raise ValueError(
+                f"role {raw.get('id')} policy_mode {policy_mode!r} does not match "
+                f"architecture_id {architecture_id!r}"
+            )
         roles.append(
             RoleConfig(
                 id=str(raw["id"]).strip(),
                 display_name=str(raw["display_name"]).strip(),
+                policy_mode=policy_mode,
                 trusted_instructions=str(raw["trusted_instructions"]).strip(),
             )
         )
@@ -114,6 +126,9 @@ def load_roles(path: Path) -> list[RoleConfig]:
 
 def load_experiment(path: Path) -> dict[str, Any]:
     payload = load_json(path)
+    if int(payload.get("schema_version", 0)) != 2:
+        raise ValueError("experiment schema_version must be 2")
+
     generation = payload.get("generation")
     if not isinstance(generation, dict):
         raise ValueError("experiment generation must be an object")
@@ -133,28 +148,65 @@ def load_experiment(path: Path) -> dict[str, Any]:
     if generation_config.request_retries < 0:
         raise ValueError("request_retries cannot be negative")
 
-    conditions = payload.get("conditions")
-    if not isinstance(conditions, list) or not conditions:
-        raise ValueError("experiment must define conditions")
+    raw_scenarios = payload.get("scenarios")
+    if not isinstance(raw_scenarios, list) or not raw_scenarios:
+        raise ValueError("experiment must define scenarios")
+    scenarios: list[ScenarioConfig] = []
     ids: set[str] = set()
-    for condition in conditions:
-        if not isinstance(condition, dict):
-            raise ValueError("each condition must be an object")
-        condition_id = str(condition["id"]).strip()
-        if not condition_id or condition_id in ids:
-            raise ValueError(f"condition ids must be unique and nonempty: {condition_id!r}")
-        ids.add(condition_id)
-        if not str(condition.get("file", "")).strip():
-            raise ValueError(f"condition {condition_id} is missing a file")
-    if "benign" not in ids:
-        raise ValueError("experiment must contain the benign control condition")
+    for raw in raw_scenarios:
+        if not isinstance(raw, dict):
+            raise ValueError("each scenario must be an object")
+        scenario = ScenarioConfig(
+            id=str(raw["id"]).strip(),
+            architecture_id=str(raw["architecture_id"]).strip(),
+            roles_file=str(raw["roles_file"]).strip(),
+            document_file=str(raw["document_file"]).strip(),
+            input_type=str(raw["input_type"]).strip(),
+            phase=str(raw["phase"]).strip(),
+            purpose=str(raw.get("purpose", "")).strip(),
+        )
+        if not scenario.id or scenario.id in ids:
+            raise ValueError(f"scenario ids must be unique and nonempty: {scenario.id!r}")
+        if scenario.architecture_id not in POLICY_MODES:
+            raise ValueError(
+                f"scenario {scenario.id} architecture_id must be one of {POLICY_MODES!r}"
+            )
+        if scenario.input_type not in {"benign", "injected"}:
+            raise ValueError(f"scenario {scenario.id} input_type must be benign or injected")
+        if scenario.phase not in {"positive-control", "poc"}:
+            raise ValueError(f"scenario {scenario.id} phase is unsupported: {scenario.phase}")
+        if not scenario.roles_file or not scenario.document_file:
+            raise ValueError(f"scenario {scenario.id} is missing roles_file or document_file")
+        ids.add(scenario.id)
+        scenarios.append(scenario)
+
+    expected_main = {
+        "neutral_benign",
+        "neutral_injected",
+        "hardened_benign",
+        "hardened_injected",
+    }
+    if {s.id for s in scenarios if s.phase == "poc"} != expected_main:
+        raise ValueError(f"POC scenarios must be exactly {sorted(expected_main)}")
+    positive = [s for s in scenarios if s.phase == "positive-control"]
+    if len(positive) != 1 or positive[0].id != "positive_control_injected":
+        raise ValueError("exactly one positive_control_injected scenario is required")
 
     if int(payload.get("base_seed", -1)) < 0:
         raise ValueError("base_seed must be a nonnegative integer")
-    if int(payload.get("default_poc_repetitions", 0)) < 1:
-        raise ValueError("default_poc_repetitions must be positive")
-    if int(payload.get("compatibility_benign_repetitions", 0)) < 1:
-        raise ValueError("compatibility_benign_repetitions must be positive")
+    for key in (
+        "default_poc_repetitions",
+        "compatibility_benign_repetitions",
+        "positive_control_repetitions",
+        "positive_control_min_artifact_reproduction_depth",
+    ):
+        if int(payload.get(key, 0)) < 1:
+            raise ValueError(f"{key} must be positive")
 
     payload["generation_config"] = generation_config
+    payload["scenario_configs"] = scenarios
     return payload
+
+
+def scenarios_for_phase(experiment: dict[str, Any], phase: str) -> list[ScenarioConfig]:
+    return [s for s in experiment["scenario_configs"] if s.phase == phase]

@@ -4,7 +4,7 @@ set -Eeuo pipefail
 BASE="/workspace/agent_worm_outputs"
 PID_FILE="$BASE/active.pid"
 LATEST_FILE="$BASE/latest_session.txt"
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.6.0}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.7.0}"
 
 if [[ ! -f "$PID_FILE" ]]; then
   echo "No active run PID file exists."
@@ -53,7 +53,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 output_root = Path(sys.argv[1])
-status_path = output_root / "session" / "session_status.json"
+status_path = output_root / "session_status.json"
 payload = {}
 if status_path.is_file():
     try:

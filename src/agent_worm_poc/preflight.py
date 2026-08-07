@@ -109,7 +109,7 @@ def run_preflight(*, output_dir: Path, allow_no_gpu: bool = False) -> dict[str, 
         warnings.append({"name": name, "detail": detail})
 
     project_root = Path(
-        os.environ.get("AGENT_WORM_PROJECT_ROOT", "/workspace/agent_worm_poc_v0.6.0")
+        os.environ.get("AGENT_WORM_PROJECT_ROOT", "/workspace/agent_worm_poc_v0.7.0")
     ).resolve()
     add("project_root_exists", project_root.is_dir(), str(project_root))
 

@@ -11,7 +11,7 @@ if [[ ! -f "$LATEST_FILE" ]]; then
 fi
 OUTPUT_ROOT="$(cat "$LATEST_FILE")"
 PID="$(cat "$PID_FILE" 2>/dev/null || true)"
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.6.0}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.7.0}"
 RUNNING=0
 if [[ "$PID" =~ ^[0-9]+$ ]] && kill -0 "$PID" 2>/dev/null; then
   CMDLINE="$(tr '\0' ' ' < "/proc/$PID/cmdline" 2>/dev/null || true)"

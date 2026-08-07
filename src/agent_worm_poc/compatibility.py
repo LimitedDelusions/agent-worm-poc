@@ -9,7 +9,8 @@ from typing import Callable, ContextManager
 
 from .adapters import OpenAICompatibleAdapter, build_request_payload
 from .config import load_experiment, load_models, load_roles
-from .constants import ROLE_ORDER
+from .constants import PROJECT_VERSION, ROLE_ORDER
+from .prompts import format_forwarded_artifact
 from .schemas import validate_role_output, validate_role_semantics
 from .scoring import score_run
 from .types import ModelSlot, StageEvent
@@ -33,18 +34,25 @@ def run_compatibility(
     lifecycle_factory: Callable[[ModelSlot, str], ContextManager[str]],
     continue_on_failure: bool = False,
 ) -> dict:
+    """Verify that every model can perform every neutral workflow role.
+
+    Compatibility is deliberately limited to benign inputs. Positive propagation is
+    tested by a separate calibration gate so attack success cannot become a model-
+    competency requirement.
+    """
     prepare_new_output_dir(output_dir)
     started_at = utc_now()
-    roles_path = root / "configs" / "roles.json"
     experiment_path = root / "configs" / "experiment.json"
+    experiment = load_experiment(experiment_path)
+    neutral = next(s for s in experiment["scenario_configs"] if s.id == "neutral_benign")
+    roles_path = root / neutral.roles_file
+    document_path = root / neutral.document_file
     roles = load_roles(roles_path)
     models = load_models(frozen_model_config, require_frozen=True)
-    experiment = load_experiment(experiment_path)
     generation = experiment["generation_config"]
     base_seed = int(experiment["base_seed"])
     benign_repetitions = int(experiment["compatibility_benign_repetitions"])
-    benign = (root / "data" / "benign_document.txt").read_text(encoding="utf-8")
-    injected = (root / "data" / "injection_direct.txt").read_text(encoding="utf-8")
+    benign = document_path.read_text(encoding="utf-8")
     summary: list[dict] = []
     all_scores: list[dict] = []
 
@@ -54,20 +62,16 @@ def run_compatibility(
         events_path = model_dir / "stage_events.jsonl"
         model_scores = []
         model_failures: list[dict] = []
-        workflows = [
-            ("benign", rep, benign)
-            for rep in range(benign_repetitions)
-        ] + [("injection_direct", 0, injected)]
 
         try:
             with lifecycle_factory(model, f"compatibility-{model.id}") as base_url:
                 adapter = OpenAICompatibleAdapter(base_url=base_url)
-                for condition_id, repetition, initial_input in workflows:
-                    current_input = initial_input
+                for repetition in range(benign_repetitions):
+                    current_input = benign
                     events: list[StageEvent] = []
                     failure_reason = None
                     placement = {role: model.id for role in ROLE_ORDER}
-                    run_id = f"COMP-{model.id}-{condition_id}-R{repetition + 1:02d}"
+                    run_id = f"COMP-{model.id}-neutral_benign-R{repetition + 1:02d}"
                     for role_index, role in enumerate(roles):
                         seed = base_seed + model_index * 10_000 + repetition * 100 + role_index
                         payload = build_request_payload(
@@ -79,6 +83,7 @@ def run_compatibility(
                         )
                         fingerprint = sha256_text(canonical_json(payload))
                         response = None
+                        forwarded_text = None
                         schema_errors: list[str] = []
                         semantic_errors: list[str] = []
                         try:
@@ -93,9 +98,7 @@ def run_compatibility(
                                 raise RuntimeError("request fingerprint changed")
                             schema_errors = validate_role_output(role.id, response.parsed)
                             semantic_errors = (
-                                []
-                                if schema_errors
-                                else validate_role_semantics(role.id, response.parsed)
+                                [] if schema_errors else validate_role_semantics(role.id, response.parsed)
                             )
                             if schema_errors:
                                 event_error = "schema validation failed"
@@ -103,15 +106,19 @@ def run_compatibility(
                                 event_error = "semantic validation failed"
                             else:
                                 event_error = None
+                                forwarded_text = format_forwarded_artifact(role.id, response.parsed)
                         except Exception as exc:
                             event_error = f"{type(exc).__name__}: {exc}"
 
                         event = StageEvent(
                             run_id=run_id,
                             placement_id=f"COMP-{model.id}",
-                            condition_id=condition_id,
+                            scenario_id="neutral_benign",
+                            architecture_id="neutral",
+                            input_type="benign",
                             repetition=repetition,
                             role_id=role.id,
+                            policy_mode=role.policy_mode,
                             model_slot=model.id,
                             model_repo=model.repo_id,
                             model_revision=model.revision,
@@ -123,6 +130,7 @@ def run_compatibility(
                             source_request_fingerprint=None,
                             source_run_id=None,
                             output=response.parsed if response else None,
+                            forwarded_text=forwarded_text,
                             raw_output=response.raw_content if response else None,
                             raw_response=response.raw_response if response else None,
                             schema_valid=bool(response) and not schema_errors,
@@ -151,35 +159,35 @@ def run_compatibility(
                                 }
                             )
                             break
-                        current_input = canonical_json(response.parsed)
+                        current_input = forwarded_text or ""
 
                     score = score_run(
                         events,
                         placement_id=f"COMP-{model.id}",
                         placement=placement,
-                        condition_id=condition_id,
+                        scenario_id="neutral_benign",
+                        architecture_id="neutral",
+                        input_type="benign",
                         repetition=repetition,
                         failure_reason=failure_reason,
                     )
                     model_scores.append(score)
                     all_scores.append(score.to_dict())
         except Exception as exc:
-            lifecycle_failure = {
-                "run_id": None,
-                "role_id": None,
-                "error": f"server lifecycle: {type(exc).__name__}: {exc}",
-                "traceback": traceback.format_exc(),
-            }
-            model_failures.append(lifecycle_failure)
+            model_failures.append(
+                {
+                    "run_id": None,
+                    "role_id": None,
+                    "error": f"server lifecycle: {type(exc).__name__}: {exc}",
+                    "traceback": traceback.format_exc(),
+                }
+            )
 
-        benign_scores = [s for s in model_scores if s.condition_id == "benign"]
-        expected_workflows = benign_repetitions + 1
         pass_model = (
             not model_failures
-            and len(model_scores) == expected_workflows
-            and len(benign_scores) == benign_repetitions
+            and len(model_scores) == benign_repetitions
             and all(s.output_valid_all for s in model_scores)
-            and all(s.benign_task_success for s in benign_scores)
+            and all(s.benign_task_success for s in model_scores)
         )
         row = {
             "model_slot": model.id,
@@ -187,11 +195,10 @@ def run_compatibility(
             "repo_id": model.repo_id,
             "revision": model.revision,
             "passed": pass_model,
-            "expected_workflows": expected_workflows,
+            "expected_workflows": benign_repetitions,
             "completed_workflows": len(model_scores),
             "output_valid_workflows": sum(s.output_valid_all for s in model_scores),
-            "benign_workflows": len(benign_scores),
-            "benign_successes": sum(s.benign_task_success for s in benign_scores),
+            "benign_successes": sum(s.benign_task_success for s in model_scores),
             "failures": model_failures,
         }
         summary.append(row)
@@ -209,7 +216,8 @@ def run_compatibility(
         except Exception:
             runtime_marker = {"error": "runtime marker could not be parsed"}
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
+        "project_version": PROJECT_VERSION,
         "started_at": started_at,
         "completed_at": utc_now(),
         "passed": passed,
@@ -218,16 +226,17 @@ def run_compatibility(
         "model_results": summary,
         "model_config": file_record(frozen_model_config),
         "roles_config": file_record(roles_path, relative_to=root),
+        "document": file_record(document_path, relative_to=root),
         "experiment_config": file_record(experiment_path, relative_to=root),
         "generation": asdict(generation),
         "container_image_reference": os.environ.get("AGENT_WORM_IMAGE_REF"),
         "runtime_marker": runtime_marker,
         "research_evidence": False,
-        "purpose": "real-model compatibility and workflow competency gate",
+        "purpose": "real-model neutral-workflow competency gate",
         "pass_rule": (
-            "Each model must load, complete three benign workflows and one injected "
-            "workflow, return schema- and semantic-valid artifacts for all four roles, "
-            "and achieve benign task success in every benign repetition."
+            "Each model must load, complete every benign neutral workflow, return "
+            "schema- and semantic-valid artifacts for all four roles, and preserve "
+            "the legitimate task end to end."
         ),
     }
     atomic_write_json(output_dir / "compatibility_summary.json", manifest)
