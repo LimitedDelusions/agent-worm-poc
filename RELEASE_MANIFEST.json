@@ -2,7 +2,7 @@
   "schema_version": 3,
   "project": "agent-worm-poc",
   "version": "0.7.0",
-  "created_at": "2026-08-06T20:00:44Z",
+  "created_at": "2026-08-07T12:21:53Z",
   "base_image": "vllm/vllm-openai:v0.25.1-cu129@sha256:483a446d6b06a3757e4c7f5ca707e32443f49202bd382380dd969f90792e6a8d",
   "file_count": 58,
   "files": [
@@ -38,8 +38,8 @@
     },
     {
       "path": "Dockerfile",
-      "sha256": "1144fb03d288dbeb7c5fce8dc778217a4fc8c2aa51949e095108cf76f24d09ac",
-      "bytes": 2326
+      "sha256": "a5ed88d9b033f4ff1dcfc3cd094ec2495b79bac05eb5f3d1910264ef8dd00a41",
+      "bytes": 2414
     },
     {
       "path": "FINAL_VALIDATION_REPORT.md",
