@@ -1,111 +1,67 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.7.0}"
-MAX_RUNTIME="${AGENT_WORM_MAX_RUNTIME:-8h}"
-POC_REPS="${POC_REPETITIONS:-3}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.2}"
+BASE="/workspace/agent_worm_outputs"
+PID_FILE="$BASE/active.pid"
+LATEST_FILE="$BASE/latest_session.txt"
+MAX_GPU_HOURS="${MAX_GPU_HOURS:-8}"
+MAX_TOTAL_COST_USD="${MAX_TOTAL_COST_USD:-25}"
+RATE="${RUNPOD_HOURLY_RATE_USD:-${RUNPOD_HOURLY_RATE:-}}"
 SESSION_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-OUTPUT_ROOT="/workspace/agent_worm_outputs/$SESSION_ID"
-PID_FILE="/workspace/agent_worm_outputs/active.pid"
-LATEST_FILE="/workspace/agent_worm_outputs/latest_session.txt"
+RUN_DIR="$BASE/$SESSION_ID"
 
-fail() {
-  echo "ERROR: $*" >&2
-  exit 64
-}
-
+fail(){ echo "ERROR: $*" >&2; exit 64; }
 [[ -d "$ROOT" ]] || fail "project directory not found: $ROOT"
-[[ -f "$ROOT/SOURCE_HASHES.sha256" ]] || fail "project integrity file is missing"
-[[ "${AGENT_WORM_IMAGE_REF:-}" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]] \
-  || fail "AGENT_WORM_IMAGE_REF must be the exact lowercase GHCR digest from RUNPOD_IMAGE.txt"
-[[ "$MAX_RUNTIME" =~ ^[1-9][0-9]*[smhd]$ ]] \
-  || fail "AGENT_WORM_MAX_RUNTIME must look like 90m, 6h, or 1d"
-[[ "$POC_REPS" =~ ^[2-5]$ ]] \
-  || fail "POC_REPETITIONS must be 2, 3, 4, or 5 for this POC"
-[[ "${RUNPOD_HOURLY_RATE:-}" =~ ^[0-9]+([.][0-9]+)?$ ]] \
-  || fail "set RUNPOD_HOURLY_RATE to the total hourly price displayed by RunPod"
-if ! python - <<'PY' >/dev/null
-import os
-rate=float(os.environ['RUNPOD_HOURLY_RATE'])
-if rate <= 0:
-    raise SystemExit(1)
-PY
-then
-  fail "RUNPOD_HOURLY_RATE must be greater than zero"
-fi
-command -v timeout >/dev/null 2>&1 || fail "GNU timeout is unavailable in this container"
-command -v setsid >/dev/null 2>&1 || fail "setsid is unavailable in this container"
-
-is_agent_worm_pid() {
-  local pid="$1" cmdline
-  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
-  kill -0 "$pid" 2>/dev/null || return 1
-  cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
-  [[ "$cmdline" == *"$ROOT/scripts/runpod/gated_run_inner.sh"* ]]
-}
-
+[[ -f "$ROOT/SOURCE_HASHES.sha256" ]] || fail "SOURCE_HASHES.sha256 is missing"
+[[ "${AGENT_WORM_IMAGE_REF:-}" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[0-9a-f]{64}$ ]] || fail "AGENT_WORM_IMAGE_REF must be the exact GHCR digest"
+[[ "$RATE" =~ ^[0-9]+([.][0-9]+)?$ ]] || fail "set RUNPOD_HOURLY_RATE_USD to the displayed total hourly rate"
+[[ "$MAX_TOTAL_COST_USD" =~ ^[0-9]+([.][0-9]+)?$ ]] || fail "MAX_TOTAL_COST_USD must be numeric"
+[[ "$MAX_GPU_HOURS" =~ ^[0-9]+([.][0-9]+)?$ ]] || fail "MAX_GPU_HOURS must be numeric"
+command -v timeout >/dev/null || fail "GNU timeout is unavailable"
+command -v setsid >/dev/null || fail "setsid is unavailable"
 if [[ -f "$PID_FILE" ]]; then
   OLD_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
-  if is_agent_worm_pid "$OLD_PID"; then
-    echo "ERROR: a gated run is already active as PID $OLD_PID." >&2
-    echo "Use: bash $ROOT/scripts/runpod/status.sh" >&2
-    exit 73
-  fi
-  echo "Removing stale active-run PID file."
+  if [[ "$OLD_PID" =~ ^[0-9]+$ ]] && kill -0 "$OLD_PID" 2>/dev/null; then fail "a gated run is already active as PID $OLD_PID"; fi
   rm -f "$PID_FILE"
 fi
-
-mkdir -p "$OUTPUT_ROOT/session"
-printf '%s\n' "$OUTPUT_ROOT" > "$LATEST_FILE"
-
-export SESSION_ID MAX_RUNTIME POC_REPS OUTPUT_ROOT
-python - "$OUTPUT_ROOT/session/launch.json" <<'PY'
-import json, os, sys, time
-from datetime import datetime, timezone
+read -r BUDGET_SECONDS ACTIVE_SECONDS <<<"$(python - "$RATE" "$MAX_TOTAL_COST_USD" "$MAX_GPU_HOURS" <<'PYCODE'
+import math,sys
+rate,cap,hours=map(float,sys.argv[1:])
+if min(rate,cap,hours)<=0:raise SystemExit('rate, cap, and hours must be positive')
+hard=min(math.floor(hours*3600),math.floor(cap/rate*3600))
+grace=600
+if hard<1800:
+    raise SystemExit('configured limits allow less than 30 minutes; increase the cap or hours before launch')
+print(hard, hard-grace)
+PYCODE
+)"
+mkdir -p "$RUN_DIR/session"
+printf '%s\n' "$RUN_DIR" > "$LATEST_FILE"
+ACTIVE_SECONDS="$ACTIVE_SECONDS" python - "$RUN_DIR/session/launch.json" "$SESSION_ID" "$RATE" "$MAX_TOTAL_COST_USD" "$BUDGET_SECONDS" <<'PYCODE'
+import json,os,sys,time
+from datetime import datetime,timezone
 from pathlib import Path
-
-value = {
-    "schema_version": 2,
-    "session_id": os.environ["SESSION_ID"],
-    "started_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-    "started_epoch": time.time(),
-    "maximum_runtime": os.environ["MAX_RUNTIME"],
-    "poc_repetitions": int(os.environ["POC_REPS"]),
-    "runpod_hourly_rate_usd": float(os.environ["RUNPOD_HOURLY_RATE"]),
-    "runpod_pod_id": os.environ.get("RUNPOD_POD_ID"),
-    "runpod_gpu_name": os.environ.get("RUNPOD_GPU_NAME"),
-    "container_image_reference": os.environ["AGENT_WORM_IMAGE_REF"],
-    "project_root": os.environ.get("AGENT_WORM_PROJECT_ROOT", "/workspace/agent_worm_poc_v0.7.0"),
-    "note": "Cost timing begins when this gated command starts, not when the Pod was first created.",
-}
-Path(sys.argv[1]).write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
-PY
-
-nohup setsid env \
-  AGENT_WORM_PROJECT_ROOT="$ROOT" \
-  AGENT_WORM_OUTPUT_ROOT="$OUTPUT_ROOT" \
-  AGENT_WORM_MAX_RUNTIME="$MAX_RUNTIME" \
-  POC_REPETITIONS="$POC_REPS" \
-  PYTHONPATH="$ROOT/src" \
-  timeout --signal=TERM --kill-after=10m "$MAX_RUNTIME" \
-  bash "$ROOT/scripts/runpod/gated_run_inner.sh" \
-  > "$OUTPUT_ROOT/session/gated-run.log" 2>&1 &
+path,session,rate,cap,seconds=sys.argv[1:]
+Path(path).write_text(json.dumps({
+ 'schema_version':1,'session_id':session,'started_at':datetime.now(timezone.utc).isoformat(),
+ 'started_epoch':time.time(),'runpod_hourly_rate_usd':float(rate),'maximum_cost_usd':float(cap),
+ 'hard_timeout_seconds':int(seconds),'active_timeout_seconds':int(os.environ['ACTIVE_SECONDS']),
+ 'container_image_reference':os.environ['AGENT_WORM_IMAGE_REF'],
+ 'project_root':os.environ.get('AGENT_WORM_PROJECT_ROOT','/workspace/agent_worm_poc_v0.8.2')},indent=2)+'\n')
+PYCODE
+nohup setsid env AGENT_WORM_RUN_ID="$SESSION_ID" AGENT_WORM_PRECREATED_RUN_DIR=1 RUNPOD_HOURLY_RATE_USD="$RATE" \
+  PYTHONPATH="$ROOT/src" timeout --signal=TERM --kill-after=10m "$ACTIVE_SECONDS" \
+  python "$ROOT/scripts/run_gated.py" real-gated --root "$ROOT" --output-root "$BASE" \
+  > "$RUN_DIR/session/gated-run.log" 2>&1 &
 PID=$!
 printf '%s\n' "$PID" > "$PID_FILE"
-printf '%s\n' "$PID" > "$OUTPUT_ROOT/session/gated-run.pid"
-
+printf '%s\n' "$PID" > "$RUN_DIR/session/gated-run.pid"
 cat <<INFO
-Started Agent Worm POC gated run.
-
+Started Agent Worm POC v0.8.2.
 Session: $SESSION_ID
 PID: $PID
-Maximum runtime: $MAX_RUNTIME
-POC repetitions: $POC_REPS
-Output directory: $OUTPUT_ROOT
-
-Monitor progress:
-  bash $ROOT/scripts/runpod/status.sh
-
-Cancel safely and package partial evidence:
-  bash $ROOT/scripts/runpod/cancel_run.sh
+Maximum gated-run cost: \$$MAX_TOTAL_COST_USD at \$$RATE/hour
+Active-run timeout: $ACTIVE_SECONDS seconds; hard stop including packaging grace: $BUDGET_SECONDS seconds
+Monitor: bash $ROOT/scripts/runpod/status.sh
+Cancel safely: bash $ROOT/scripts/runpod/cancel_run.sh
 INFO

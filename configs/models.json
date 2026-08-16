@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "slot": "qwen",
+      "display_name": "Qwen3-30B-A3B-Instruct-2507",
+      "repo_id": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+      "revision": "RESOLVE_AT_GATE",
+      "tokenizer_revision": "RESOLVE_AT_GATE",
+      "served_name": "qwen-poc",
+      "dtype": "bfloat16",
+      "max_model_len": 8192,
+      "server_args": [],
+      "request_extra": {}
+    },
+    {
+      "slot": "gemma",
+      "display_name": "Gemma-3-27B-IT",
+      "repo_id": "google/gemma-3-27b-it",
+      "revision": "RESOLVE_AT_GATE",
+      "tokenizer_revision": "RESOLVE_AT_GATE",
+      "served_name": "gemma-poc",
+      "dtype": "bfloat16",
+      "max_model_len": 8192,
+      "server_args": [],
+      "request_extra": {}
+    },
+    {
+      "slot": "gpt_oss",
+      "display_name": "GPT-OSS-20B",
+      "repo_id": "openai/gpt-oss-20b",
+      "revision": "RESOLVE_AT_GATE",
+      "tokenizer_revision": "RESOLVE_AT_GATE",
+      "served_name": "gpt-oss-poc",
+      "dtype": "auto",
+      "max_model_len": 8192,
+      "server_args": [
+        "--reasoning-parser",
+        "openai_gptoss"
+      ],
+      "request_extra": {
+        "reasoning_effort": "low"
+      }
+    },
+    {
+      "slot": "nemotron",
+      "display_name": "NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "repo_id": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+      "revision": "RESOLVE_AT_GATE",
+      "tokenizer_revision": "RESOLVE_AT_GATE",
+      "served_name": "nemotron-poc",
+      "dtype": "bfloat16",
+      "max_model_len": 8192,
+      "server_args": [
+        "--trust-remote-code"
+      ],
+      "request_extra": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "reasoning_parser_plugin_repo_path": "nano_v3_reasoning_parser.py",
+      "reasoning_parser_name": "nano_v3"
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "intake": {
+    "type": "object",
+    "required": [
+      "artifact_title",
+      "artifact_body",
+      "supplier",
+      "item",
+      "quantity",
+      "total_price",
+      "delivery"
+    ],
+    "properties": {
+      "artifact_title": {
+        "type": "string"
+      },
+      "artifact_body": {
+        "type": "string"
+      },
+      "supplier": {
+        "type": "string"
+      },
+      "item": {
+        "type": "string"
+      },
+      "quantity": {
+        "type": "string"
+      },
+      "total_price": {
+        "type": "string"
+      },
+      "delivery": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "relay": {
+    "type": "object",
+    "required": [
+      "artifact_title",
+      "artifact_body",
+      "review_flags"
+    ],
+    "properties": {
+      "artifact_title": {
+        "type": "string"
+      },
+      "artifact_body": {
+        "type": "string"
+      },
+      "review_flags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "planner": {
+    "type": "object",
+    "required": [
+      "recommended_action",
+      "authorization_reference",
+      "rationale",
+      "plan_summary"
+    ],
+    "properties": {
+      "recommended_action": {
+        "type": "string",
+        "enum": [
+          "catalog_lookup",
+          "request_internal_review",
+          "external_vendor_callback",
+          "no_action"
+        ]
+      },
+      "authorization_reference": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "rationale": {
+        "type": "string"
+      },
+      "plan_summary": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "executor": {
+    "type": "object",
+    "required": [
+      "decision",
+      "action",
+      "rationale"
+    ],
+    "properties": {
+      "decision": {
+        "type": "string",
+        "enum": [
+          "approve",
+          "deny",
+          "escalate"
+        ]
+      },
+      "action": {
+        "type": "string",
+        "enum": [
+          "catalog_lookup",
+          "request_internal_review",
+          "external_vendor_callback",
+          "no_action"
+        ]
+      },
+      "rationale": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  }
+}

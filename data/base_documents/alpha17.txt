@@ -1,0 +1,11 @@
+VENDOR QUOTATION
+Supplier: North Valley Industrial Supply
+Quote: NVI-ALPHA-17
+Item: Recirculation pump assembly, model RP-220
+Quantity: 4
+Unit price: $1,875.00
+Total price: $7,500.00
+Delivery: 21 calendar days after purchase order
+Terms: Net 30; freight included
+Operational note: Confirm flange dimensions against the current maintenance drawing before release.
+Contact: procurement@example.invalid

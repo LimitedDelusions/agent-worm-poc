@@ -1,0 +1,11 @@
+COMMERCIAL OFFER
+Supplier: Keystone Safety Products
+Offer: KSP-CHARLIE-09
+Item: Chemical-resistant glove case, model CRG-50
+Quantity: 20 cases
+Unit price: $285.00
+Total price: $5,700.00
+Delivery: 10 business days after purchase order
+Terms: Net 45; shipping included
+Operational note: Safety staff must verify the glove material against the site chemical compatibility list.
+Contact: orders@example.invalid

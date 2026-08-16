@@ -1,236 +1,231 @@
 from __future__ import annotations
-
-import argparse
-import json
-import os
 from pathlib import Path
-
-from .compatibility import run_compatibility
-from .config import load_experiment, load_models, scenarios_for_phase
-from .engine import all_placements, execute_experiment
-from .freeze import freeze_models
-from .preflight import run_preflight
-from .reporting import evaluate_positive_control, generate_meeting_summary, package_session
-from .server import VllmServerManager
-from .util import atomic_write_json, prepare_new_output_dir, utc_now
-
-
-def _project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
-def _output_root(value: str | None) -> Path:
-    if value:
-        return Path(value).resolve()
-    env = os.environ.get("AGENT_WORM_OUTPUT_ROOT")
-    if env:
-        return Path(env).resolve()
-    return (_project_root() / "outputs" / "manual-session").resolve()
+import argparse,csv,json,os,re,signal,time
+from .config import load_models,load_experiment,load_prompts,load_schemas
+from .cases import build_main_cases,build_positive_pair_cases,build_shakedown_cases,build_compatibility_cases
+from .adapters import FakeAdapter,OpenAICompatibleAdapter
+from .server import VLLMServerManager
+from .engine import ExperimentRunner
+from .scoring import score_record
+from .analysis import summarize
+from .review import build_blinded_review
+from .runtime import freeze_revisions,record_environment
+from .evidence import package_results
+from .release_audit import audit_release
+from .scientific_gates import evaluate_shakedown_records
+from .util import write_json,utc_stamp
 
 
-def _server_factory(output_dir: Path):
-    manager = VllmServerManager(output_dir=output_dir)
-    return lambda model, phase: manager.serve(model, phase=phase)
+def root_from_arg(value:str|None)->Path:
+    return Path(value).resolve() if value else Path(__file__).resolve().parents[2]
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="agent-worm")
-    parser.add_argument("--project-root", default=str(_project_root()))
-    parser.add_argument("--output-root")
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    preflight = sub.add_parser("preflight")
-    preflight.add_argument("--allow-no-gpu", action="store_true")
-
-    sub.add_parser("freeze-models")
-    sub.add_parser("fake-validation")
-    sub.add_parser("compatibility")
-    sub.add_parser("positive-control")
-    sub.add_parser("shakedown")
-
-    poc = sub.add_parser("poc")
-    poc.add_argument("--repetitions", type=int, default=None)
-
-    package = sub.add_parser("package")
-    package.add_argument("--destination-dir", default="/workspace")
-    return parser
+def _load(root:Path):
+    return (load_models(root/"configs/models.json"),load_experiment(root/"configs/experiment.json"),
+            load_prompts(root/"configs/prompts.json"),load_schemas(root/"configs/schemas.json"))
 
 
-def _main_scenario_ids(experiment: dict) -> set[str]:
-    return {scenario.id for scenario in scenarios_for_phase(experiment, "poc")}
+def _write_scores(path:Path,scores:list[dict]):
+    path.parent.mkdir(parents=True,exist_ok=True)
+    fields=sorted({key for row in scores for key in row}) if scores else []
+    with path.open("w",newline="",encoding="utf-8") as handle:
+        writer=csv.DictWriter(handle,fieldnames=fields);writer.writeheader();writer.writerows(scores)
 
 
-def _positive_scenario_id(experiment: dict) -> str:
-    positive = scenarios_for_phase(experiment, "positive-control")
-    if len(positive) != 1:
-        raise RuntimeError("exactly one positive-control scenario is required")
-    return positive[0].id
+def _case_manifest(cases):
+    return [{"workflow_id":case.workflow_id,"block_id":case.block_id,
+             "randomization_block_id":case.randomization_block_id,
+             "placement_id":case.placement_id,
+             "pair_id":f"intake-{case.role_models['intake']}__relay-{case.role_models['relay']}",
+             "role_models":case.role_models,"policy":case.policy,
+             "scenario_kind":case.scenario_kind,"carrier_variant":case.carrier_variant,
+             "carrier_id":case.carrier.carrier_id if case.carrier else None,
+             "authorization_reference":case.carrier.authorization_reference if case.carrier else None,
+             "base_document_id":case.base_document_id,"repetition":case.repetition,
+             "stage_seeds":case.stage_seeds,"baseline_type":case.baseline_type,
+             "phase":case.phase,"terminal_stage":case.terminal_stage} for case in cases]
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    root = Path(args.project_root).resolve()
-    output_root = _output_root(args.output_root)
-    output_root.mkdir(parents=True, exist_ok=True)
-    frozen = output_root / "setup" / "frozen_models.json"
-    experiment = load_experiment(root / "configs" / "experiment.json")
-
-    if args.command == "preflight":
-        report = run_preflight(
-            output_dir=output_root / "setup",
-            allow_no_gpu=args.allow_no_gpu,
-        )
-        print(json.dumps(report, indent=2))
-        return 0
-
-    if args.command == "freeze-models":
-        result = freeze_models(
-            candidate_path=root / "configs" / "model_candidates.json",
-            output_path=frozen,
-            setup_dir=output_root / "setup",
-        )
-        print(json.dumps({"frozen_models": str(frozen), "slots": len(result["model_slots"])}, indent=2))
-        return 0
-
-    if args.command == "fake-validation":
-        base = output_root / "fake_validation"
-        prepare_new_output_dir(base)
-        models = load_models(root / "configs" / "model_candidates.json")
-        canonical = [("CONTROL", all_placements(models)[0][1])]
-        positive_manifest = execute_experiment(
-            root=root,
-            output_dir=base / "positive_control",
-            model_config_path=root / "configs" / "model_candidates.json",
-            repetitions=int(experiment["positive_control_repetitions"]),
-            adapter_mode="fake",
-            placements_override=canonical,
-            scenario_ids={_positive_scenario_id(experiment)},
-            reuse_identical_requests=False,
-            evidence_label="simulated-positive-control-plumbing-only",
-        )
-        positive_evaluation = evaluate_positive_control(
-            control_dir=base / "positive_control",
-            minimum_depth=int(experiment["positive_control_min_artifact_reproduction_depth"]),
-        )
-        poc_manifest = execute_experiment(
-            root=root,
-            output_dir=base / "poc",
-            model_config_path=root / "configs" / "model_candidates.json",
-            repetitions=1,
-            adapter_mode="fake",
-            scenario_ids=_main_scenario_ids(experiment),
-            reuse_identical_requests=False,
-            evidence_label="simulated-plumbing-only",
-        )
-        result = {
-            "schema_version": 2,
-            "generated_at": utc_now(),
-            "positive_control": positive_manifest,
-            "positive_control_evaluation": positive_evaluation,
-            "poc": poc_manifest,
-            "passed": bool(
-                positive_evaluation["passed"]
-                and poc_manifest["failed_workflows"] == 0
-                and poc_manifest["output_invalid_stages"] == 0
-            ),
-            "research_evidence": False,
-        }
-        atomic_write_json(base / "manifest.json", result)
-        print(json.dumps(result, indent=2))
-        return 0 if result["passed"] else 2
-
-    if args.command == "package":
-        archive = package_session(
-            project_root=root,
-            output_root=output_root,
-            destination_dir=Path(args.destination_dir).resolve(),
-        )
-        print(archive)
-        return 0
-
-    if not frozen.exists():
-        raise SystemExit(f"Frozen model config missing: {frozen}. Run freeze-models first.")
-
-    if args.command == "compatibility":
-        manifest = run_compatibility(
-            root=root,
-            output_dir=output_root / "compatibility",
-            frozen_model_config=frozen,
-            lifecycle_factory=_server_factory(output_root / "compatibility"),
-        )
-        print(json.dumps(manifest, indent=2))
-        return 0
-
-    models = load_models(frozen, require_frozen=True)
-    placements = all_placements(models)
-    canonical = [("CONTROL", placements[0][1])]
-
-    if args.command == "positive-control":
-        manifest = execute_experiment(
-            root=root,
-            output_dir=output_root / "positive_control",
-            model_config_path=frozen,
-            repetitions=int(experiment["positive_control_repetitions"]),
-            adapter_mode="real",
-            lifecycle_factory=_server_factory(output_root / "positive_control"),
-            placements_override=canonical,
-            scenario_ids={_positive_scenario_id(experiment)},
-            reuse_identical_requests=False,
-            evidence_label="real-model-calibration-control-not-research-evidence",
-        )
-        evaluation = evaluate_positive_control(
-            control_dir=output_root / "positive_control",
-            minimum_depth=int(experiment["positive_control_min_artifact_reproduction_depth"]),
-        )
-        print(json.dumps({"manifest": manifest, "evaluation": evaluation}, indent=2))
-        if not evaluation["passed"]:
-            raise RuntimeError("positive propagation control failed")
-        return 0
-
-    if args.command == "shakedown":
-        manifest = execute_experiment(
-            root=root,
-            output_dir=output_root / "shakedown",
-            model_config_path=frozen,
-            repetitions=1,
-            adapter_mode="real",
-            lifecycle_factory=_server_factory(output_root / "shakedown"),
-            placements_override=[("SHAKEDOWN", placements[0][1])],
-            scenario_ids=_main_scenario_ids(experiment),
-            reuse_identical_requests=False,
-            evidence_label="real-model-cross-model-shakedown",
-        )
-        print(json.dumps(manifest, indent=2))
-        return 0 if manifest["failed_workflows"] == 0 else 2
-
-    if args.command == "poc":
-        repetitions = (
-            int(experiment["default_poc_repetitions"])
-            if args.repetitions is None
-            else args.repetitions
-        )
-        if repetitions < 2 or repetitions > 5:
-            raise SystemExit("POC repetitions must be between 2 and 5")
-        manifest = execute_experiment(
-            root=root,
-            output_dir=output_root / "poc",
-            model_config_path=frozen,
-            repetitions=repetitions,
-            adapter_mode="real",
-            lifecycle_factory=_server_factory(output_root / "poc"),
-            scenario_ids=_main_scenario_ids(experiment),
-            reuse_identical_requests=False,
-            evidence_label="real-model-proof-of-concept-not-final-research",
-        )
-        generate_meeting_summary(
-            poc_dir=output_root / "poc",
-            destination=output_root / "NEXT_MEETING_SUMMARY.md",
-        )
-        print(json.dumps(manifest, indent=2))
-        return 0 if manifest["failed_workflows"] == 0 else 2
-
-    raise SystemExit(f"Unhandled command: {args.command}")
+_RUN_ID_PATTERN=re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+_PRECREATED_RUN_DIR_ENV="AGENT_WORM_PRECREATED_RUN_DIR"
+_PRECREATED_SESSION_FILES={"launch.json","gated-run.log","gated-run.pid"}
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+def _prepare_run_dir(output_root:Path,run_id:str)->Path:
+    if not _RUN_ID_PATTERN.fullmatch(run_id):
+        raise ValueError("AGENT_WORM_RUN_ID must be a single safe path component")
+    output_root=output_root.resolve();run_dir=output_root/run_id
+    if run_dir.parent!=output_root:
+        raise ValueError("Run directory escaped the configured output root")
+    if os.environ.get(_PRECREATED_RUN_DIR_ENV)!="1":
+        run_dir.mkdir(parents=True,exist_ok=False);return run_dir
+    if run_dir.is_symlink() or not run_dir.is_dir() or run_dir.resolve().parent!=output_root:
+        raise FileExistsError("Precreated RunPod run directory is missing, linked, or outside the output root")
+    entries=list(run_dir.iterdir())
+    if any(entry.name!="session" for entry in entries):
+        raise FileExistsError("Precreated RunPod run directory contains unexpected entries")
+    session_dir=run_dir/"session"
+    if session_dir.is_symlink() or not session_dir.is_dir():
+        raise FileExistsError("Precreated RunPod session directory is missing or linked")
+    for entry in session_dir.iterdir():
+        if (entry.name not in _PRECREATED_SESSION_FILES or entry.is_symlink()
+                or not entry.is_file()):
+            raise FileExistsError("Precreated RunPod session directory contains unexpected entries")
+    launch_path=session_dir/"launch.json"
+    if launch_path.is_symlink() or not launch_path.is_file():
+        raise FileExistsError("Precreated RunPod session is missing launch.json")
+    try:launch=json.loads(launch_path.read_text(encoding="utf-8"))
+    except (OSError,json.JSONDecodeError) as exc:
+        raise ValueError("Precreated RunPod launch.json is invalid") from exc
+    if not isinstance(launch,dict) or launch.get("session_id")!=run_id:
+        raise ValueError("Precreated RunPod launch session does not match AGENT_WORM_RUN_ID")
+    return run_dir
+
+
+def run_cases(root:Path,cases:list,adapter_name:str,output_dir:Path,frozen_models=None,
+              compatibility:bool=False):
+    models,config,prompts,schemas=_load(root)
+    if frozen_models is not None:models=frozen_models
+    output_dir.mkdir(parents=True,exist_ok=True)
+    write_json(output_dir/"cases_manifest.json",_case_manifest(cases))
+    if adapter_name=="fake":adapter=FakeAdapter();manager=None
+    else:
+        api_key=os.environ.get("POC_LOCAL_API_KEY","local-poc")
+        adapter=OpenAICompatibleAdapter(api_key=api_key,
+            timeout=config["runtime"]["request_timeout_seconds"],
+            retries=config["runtime"]["max_transport_retries"])
+        manager=VLLMServerManager(output_dir,port=config["runtime"]["server_port"],api_key=api_key,
+            start_timeout=config["runtime"]["server_start_timeout_seconds"],
+            idle_memory_mib_max=config["runtime"]["gpu_idle_memory_mib_max"])
+    runner=ExperimentRunner(models,adapter,prompts,schemas,config,output_dir,manager)
+    records=runner.run_compatibility(cases) if compatibility else runner.run(cases)
+    expected=json.loads((root/"configs/expected_facts.json").read_text(encoding="utf-8"))
+    scores=[score_record(record,expected) for record in records]
+    _write_scores(output_dir/"workflow_scores_raw.csv",scores)
+    summary=summarize(scores,output_dir,config)
+    write_json(output_dir/"phase_summary.json",summary)
+    return records,scores,summary
+
+
+def run_phase(root:Path,phase:str,adapter_name:str,output_dir:Path,frozen_models=None):
+    models,config,_,_=_load(root);slots=[m.slot for m in (frozen_models or models)]
+    data_dir=root/"data/base_documents"
+    builders={"compatibility":build_compatibility_cases,"positive_pair":build_positive_pair_cases,
+              "shakedown":build_shakedown_cases,"main":build_main_cases}
+    cases=builders[phase](config,slots,data_dir)
+    return run_cases(root,cases,adapter_name,output_dir,frozen_models,
+                     compatibility=(phase=="compatibility"))
+
+
+def compatibility_gate(scores:list[dict],config:dict)->dict:
+    total=len(scores);valid=sum(bool(row["all_stages_valid"]) for row in scores)
+    benign=sum(bool(row["benign_end_to_end"]) for row in scores);by_model={}
+    for slot in sorted({row["intake_model"] for row in scores}):
+        rows=[row for row in scores if row["intake_model"]==slot]
+        by_model[slot]={"n":len(rows),
+            "valid_rate":sum(bool(row["all_stages_valid"]) for row in rows)/len(rows),
+            "benign_rate":sum(bool(row["benign_end_to_end"]) for row in rows)/len(rows)}
+    passed=bool(total and valid/total>=config["gates"]["benign_role_schema_rate_min"]
+                and benign/total>=config["gates"]["benign_end_to_end_rate_min"]
+                and all(value["valid_rate"]>=config["gates"]["benign_role_schema_rate_min"]
+                        and value["benign_rate"]>=config["gates"]["benign_end_to_end_rate_min"]
+                        for value in by_model.values()))
+    return {"passed":passed,"n":total,"valid_rate":valid/total if total else 0.0,
+            "benign_rate":benign/total if total else 0.0,"by_model":by_model}
+
+
+def positive_gate(scores:list[dict],config:dict,slots:list[str])->dict:
+    rows=[row for row in scores if row["phase"]=="positive_pair"]
+    expected_per_pair=max(1,len(config.get("carrier_variants",[]))*int(config.get("positive_control_repetitions",1)))
+    pairs={}
+    for src in slots:
+        for dst in slots:
+            values=[row for row in rows if row["intake_model"]==src and row["relay_model"]==dst]
+            valid=[row for row in values if row["all_stages_valid"]]
+            successes=sum(bool(row["second_hop_viable"]) for row in values)
+            rate=successes/len(values) if values else 0.0
+            pairs[f"{src}->{dst}"]={"n":len(values),"valid_n":len(valid),
+                "successes":successes,"rate":rate}
+    overall=sum(bool(row["second_hop_viable"]) for row in rows)/len(rows) if rows else 0.0
+    invalid_rate=sum(not bool(row["all_stages_valid"]) for row in rows)/len(rows) if rows else 1.0
+    pair_min=float(config["gates"]["positive_each_ordered_pair_rate_min"])
+    passed=bool(rows and overall>=config["gates"]["positive_two_hop_rate_min"]
+                and invalid_rate<=config["gates"]["invalid_output_rate_max"]
+                and len(pairs)==len(slots)**2
+                and all(value["n"]==expected_per_pair and value["rate"]>=pair_min
+                        for value in pairs.values()))
+    return {"passed":passed,"n":len(rows),"overall_rate":overall,"invalid_rate":invalid_rate,
+            "expected_n_per_pair":expected_per_pair,
+            "minimum_pair_rate":min((value["rate"] for value in pairs.values()),default=0.0),
+            "required_pair_rate":pair_min,"ordered_pairs":pairs}
+
+
+def shakedown_gate(scores:list[dict],config:dict)->dict:
+    rows=[row for row in scores if row["phase"]=="shakedown"]
+    return evaluate_shakedown_records(rows,config)
+
+
+def gated(root:Path,output_root:Path,adapter_name:str="real")->int:
+    def terminate(_signum,_frame):raise KeyboardInterrupt("Run terminated by timeout or operator")
+    signal.signal(signal.SIGTERM,terminate);signal.signal(signal.SIGINT,terminate)
+    run_id=os.environ.get("AGENT_WORM_RUN_ID") or f"{utc_stamp()}-{os.getpid()}"
+    run_dir=_prepare_run_dir(output_root,run_id)
+    started=time.time();record_environment(run_dir/"environment")
+    models,config,_,_=_load(root)
+    status={"run_id":run_id,"release":config["release"],"started_epoch":started,
+            "status":"running","gates":{},"adapter":adapter_name}
+    write_json(run_dir/"RUN_STATUS.json",status)
+    try:
+        audit=audit_release(root);write_json(run_dir/"environment/release_audit.json",audit)
+        if not audit["passed"]:raise RuntimeError("Release audit failed before model work")
+        frozen=freeze_revisions(models,run_dir/"environment") if adapter_name=="real" else models
+        _,scores,_=run_phase(root,"compatibility",adapter_name,run_dir/"01_compatibility",frozen)
+        gate=compatibility_gate(scores,config);status["gates"]["compatibility"]=gate;write_json(run_dir/"RUN_STATUS.json",status)
+        if not gate["passed"]:raise RuntimeError("Compatibility gate failed")
+
+        slots=[model.slot for model in frozen];data_dir=root/"data/base_documents"
+        calibration_cases=(build_positive_pair_cases(config,slots,data_dir)+
+                           build_shakedown_cases(config,slots,data_dir))
+        _,calibration_scores,_=run_cases(root,calibration_cases,adapter_name,
+                                         run_dir/"02_calibration",frozen)
+        positive=positive_gate(calibration_scores,config,slots)
+        shakedown=shakedown_gate(calibration_scores,config)
+        status["gates"]["positive_pair"]=positive;status["gates"]["shakedown"]=shakedown
+        write_json(run_dir/"RUN_STATUS.json",status)
+        if not positive["passed"]:raise RuntimeError("Positive-control gate failed; assay sensitivity is insufficient")
+        if not shakedown["passed"]:raise RuntimeError("Calibration gate failed; main matrix intentionally aborted")
+
+        _,main_scores,summary=run_phase(root,"main",adapter_name,run_dir/"03_main",frozen)
+        review=build_blinded_review(run_dir/"03_main/stage_events.jsonl",
+                                    run_dir/"03_main/workflow_scores.csv",
+                                    run_dir/"04_semantic_review",config)
+        write_json(run_dir/"04_semantic_review/review_summary.json",review)
+        status["gates"]["main"]=summary["gates"];status["status"]="completed"
+        status["ended_epoch"]=time.time()
+    except BaseException as exc:
+        status["status"]="aborted";status["error"]=f"{type(exc).__name__}: {exc}"
+        status["ended_epoch"]=time.time()
+    finally:
+        elapsed=(status.get("ended_epoch",time.time())-started)/3600
+        rate=os.environ.get("RUNPOD_HOURLY_RATE_USD") or os.environ.get("RUNPOD_HOURLY_RATE")
+        status["elapsed_gpu_hours"]=elapsed
+        status["estimated_compute_cost_usd"]=round(elapsed*float(rate),2) if rate else None
+        write_json(run_dir/"RUN_STATUS.json",status)
+        package_results(root,run_dir,output_root/f"agent-worm-results-{run_id}.zip")
+    return 0 if status["status"]=="completed" else 2
+
+
+def main(argv=None):
+    parser=argparse.ArgumentParser()
+    parser.add_argument("command",choices=["fake-gated","real-gated","phase"])
+    parser.add_argument("--root");parser.add_argument("--output-root",default="outputs/runs")
+    parser.add_argument("--phase",choices=["compatibility","positive_pair","shakedown","main"])
+    parser.add_argument("--adapter",choices=["fake","real"],default="fake")
+    args=parser.parse_args(argv);root=root_from_arg(args.root);output=Path(args.output_root).resolve()
+    if args.command=="fake-gated":return gated(root,output,"fake")
+    if args.command=="real-gated":return gated(root,output,"real")
+    if not args.phase:parser.error("--phase is required")
+    run_phase(root,args.phase,args.adapter,output/args.phase);return 0
+
+
+if __name__=="__main__":raise SystemExit(main())

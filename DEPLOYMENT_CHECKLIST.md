@@ -1,48 +1,65 @@
-# Deployment Checklist — v0.7.0
+# Live Deployment Checklist — v0.8.2
 
-## Before coding handoff
+## Free gates
 
-- [ ] v0.7.0 ZIP SHA-256 matches the supplied sidecar.
-- [ ] The archive extracts into a clean `agent_worm_poc_v0.7.0` directory.
-- [ ] `CODING_HANDOFF.md` has been provided to the coding workspace.
+- [ ] Release ZIP and SHA-256 downloaded
+- [ ] ZIP checksum verified
+- [ ] Source extracted into a clean repository
+- [ ] Python compilation passes
+- [ ] All tests pass
+- [ ] Source integrity manifest passes
+- [ ] Release audit passes
+- [ ] Complete fake gated run finishes successfully
+- [ ] GitHub validation job is green
+- [ ] GitHub container-build job is green
+- [ ] Immutable GHCR digest recorded
 
-## Before GitHub push
+## RunPod configuration
 
-- [ ] Old v0.6 files were removed rather than overlaid.
-- [ ] `.github`, `.dockerignore`, and `.gitignore` were copied.
-- [ ] Compilation passes.
-- [ ] All tests pass.
-- [ ] Shell syntax passes.
-- [ ] `release_audit.py` reports `passed: true`.
-- [ ] Fake positive control reaches artifact depth 2.
-- [ ] Fake main POC completes 24 placements × 4 scenarios with no reuse or invalid output.
+- [ ] One on-demand A100 80 GB, PCIe or SXM
+- [ ] Exact GHCR digest used, not a mutable tag
+- [ ] Persistent `/workspace` volume is at least 350 GB
+- [ ] HTTP port 8888 exposed
+- [ ] `HF_TOKEN={{ RUNPOD_SECRET_huggingface_token }}`
+- [ ] `JUPYTER_PASSWORD={{ RUNPOD_SECRET_jupyter_password }}`
+- [ ] `HF_HOME=/workspace/hf-cache`
+- [ ] `AGENT_WORM_IMAGE_REF=<exact GHCR digest>`
+- [ ] Displayed total hourly price recorded
+- [ ] Maximum planned spend confirmed
 
-## Before RunPod
+## Before launch
 
-- [ ] GitHub `validate` job is green.
-- [ ] GitHub `build` job is green.
-- [ ] Exact GHCR `@sha256:` reference is saved.
-- [ ] RunPod template uses that exact digest, not `:latest` or `:0.7.0`.
-- [ ] Hugging Face and Jupyter secrets are configured.
-- [ ] One A100 80 GB GPU is selected.
-- [ ] `/workspace` has adequate persistent storage.
-- [ ] Total hourly price is recorded in `RUNPOD_HOURLY_RATE`.
-- [ ] `POC_REPETITIONS` is 2–5; default 3.
+- [ ] Jupyter requires the configured password
+- [ ] `nvidia-smi` shows one 80 GB A100
+- [ ] `/workspace/agent_worm_poc_v0.8.2` exists
+- [ ] At least 300 GB is free under `/workspace`
+- [ ] No unrelated process is using significant GPU memory
+- [ ] `RUNPOD_HOURLY_RATE_USD` is exported with the exact displayed rate
+- [ ] `MAX_TOTAL_COST_USD=25` is exported
+- [ ] `MAX_GPU_HOURS=8` is exported
 
-## Before starting the gated run
+## During the gated run
 
-- [ ] Container says v0.7.0 is ready.
-- [ ] `/workspace/agent_worm_poc_v0.7.0` exists.
-- [ ] `AGENT_WORM_IMAGE_REF` contains the exact digest.
-- [ ] No older gated run is active.
+- [ ] Compatibility passes for all four models
+- [ ] Nemotron parser plugin is frozen, hashed, and recorded in model revisions
+- [ ] Positive control passes for every ordered model pair
+- [ ] Sham false-positive rate is zero
+- [ ] Hardened calibration stays under its propagation ceiling
+- [ ] Neutral calibration shows success and failure within at least one matched block
+- [ ] Main phase starts only after calibration passes
+- [ ] No package installation occurs on the paid Pod
+- [ ] Status and estimated cost are checked periodically
+- [ ] Operator remembers that script completion does not stop RunPod billing
 
-## Before terminating the Pod
+## Before termination
 
-- [ ] Gated process is no longer running.
-- [ ] Result ZIP exists.
-- [ ] Result `.sha256` exists.
-- [ ] Both files were downloaded locally.
-- [ ] Local SHA-256 verification succeeds.
-- [ ] Extracted package contains `ARTIFACT_INDEX.md` and `PACKAGE_MANIFEST.json`.
-- [ ] `outputs/NEXT_MEETING_SUMMARY.md` was reviewed.
-- [ ] Pod is terminated after verification.
+- [ ] Gated process reports NOT RUNNING
+- [ ] Evidence ZIP downloaded
+- [ ] Evidence checksum downloaded
+- [ ] Local SHA-256 matches
+- [ ] ZIP opens with no errors
+- [ ] `PACKAGE_MANIFEST.json` exists inside the ZIP
+- [ ] `RUN_STATUS.json` stored locally
+- [ ] Actual RunPod balance decrease recorded
+- [ ] Semantic review key stored separately from the blinded packet
+- [ ] Pod terminated after evidence verification

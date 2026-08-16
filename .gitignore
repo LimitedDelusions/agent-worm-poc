@@ -1,10 +1,11 @@
-__pycache__/
-*.py[cod]
-.pytest_cache/
 .venv/
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/
+*.py[cod]
 outputs/*
 !outputs/.gitkeep
-agent-worm-results-*.zip
-agent-worm-results-*.sha256
+dist/
+build/
+*.egg-info/
 .env
-*.token

@@ -1,45 +1,39 @@
-# Recovery and Failure Handling
+# Failure and Recovery
 
-## If GitHub validation fails
+## General rule
 
-Do not deploy. Open the failed step, fix the source, rerun all validation, and obtain a new digest.
+Do not install packages, edit prompts, or improvise on paid GPU time. Download the evidence package, terminate billing, fix the versioned source, rebuild in GitHub, and redeploy.
 
-## If the Pod cannot start the image
+## Compatibility fails
 
-Stop the Pod. Confirm the exact lowercase GHCR digest and registry visibility. Do not substitute a mutable tag.
+Download partial evidence. Identify the exact model, role, schema, or server error. Fix outside RunPod and issue a new version if behavior-affecting configuration changes.
 
-## If preflight fails
+## Positive control fails
 
-Read `outputs/setup/preflight.json` and the gated log. Correct the missing secret, storage, image reference, GPU, or runtime issue. A failed preflight should occur before model download.
+The assay has not proved that the tested pair can reproduce the carrier even under trusted preservation instructions. Do not interpret neutral zeroes as safety.
 
-## If a model fails compatibility
+## Shakedown fails
 
-The run stops. Preserve the packaged partial evidence. Do not skip the model or continue to the POC. Review the model-specific server log and compatibility manifest.
+- universally zero: natural assay is not measurable;
+- universally successful: assay is saturated;
+- variation only between carrier forms: evidence does not support the model-assignment question;
+- hardened ceiling exceeded: negative control is not functioning;
+- sham false positive: scorer is invalid.
 
-## If positive control fails
+The main phase intentionally does not start.
 
-The assay cannot demonstrate multi-hop artifact reproduction. Do not interpret neutral zero propagation. Review the carrier, generated artifacts, schemas, and scoring before another paid run.
+## Timeout or cancellation
 
-## If shakedown fails
+Use `cancel_run.sh`. The Python process packages partial evidence in `finally`. If forced termination is necessary, download the full session directory and emergency ZIP before terminating the Pod.
 
-Do not run all 24 placements. Correct invalid structured output, server stability, or workflow handoff first.
+## Storage/I/O failure
 
-## If the POC hangs or cost grows
+Stop issuing writes. Download available evidence. One stop/start may test whether the volume recovers. Persistent I/O error requires a new Pod; do not repeatedly reinstall.
 
-```bash
-bash /workspace/agent_worm_poc_v0.7.0/scripts/runpod/status.sh
-bash /workspace/agent_worm_poc_v0.7.0/scripts/runpod/cancel_run.sh
-```
+## VRAM does not release
 
-The cancellation path sends a controlled termination signal and packages partial evidence.
+The server manager aborts instead of loading another model into residual memory. Preserve the server log and terminate the Pod.
 
-## If the result ZIP is missing
+## Evidence ZIP fails verification
 
-Run:
-
-```bash
-bash /workspace/agent_worm_poc_v0.7.0/scripts/runpod/package_results.sh \
-  "$(cat /workspace/agent_worm_outputs/latest_session.txt)"
-```
-
-Do not terminate the Pod until the ZIP and checksum are downloaded and verified.
+Do not terminate until either the ZIP verifies or the entire results directory has been downloaded.

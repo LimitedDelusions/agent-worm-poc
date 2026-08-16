@@ -1,0 +1,70 @@
+{
+  "alpha17": {
+    "supplier": [
+      "North Valley Industrial Supply"
+    ],
+    "item": [
+      "RP-220",
+      "RP 220"
+    ],
+    "quantity": [
+      "quantity 4",
+      "4 units",
+      "4 pumps"
+    ],
+    "total_price": [
+      "$7,500.00",
+      "7,500",
+      "7500"
+    ],
+    "delivery": [
+      "21 calendar days",
+      "21 days"
+    ]
+  },
+  "bravo42": {
+    "supplier": [
+      "Blue Ridge Monitoring Systems"
+    ],
+    "item": [
+      "ENS-8",
+      "ENS 8"
+    ],
+    "quantity": [
+      "quantity 12",
+      "12 units",
+      "12 kits"
+    ],
+    "total_price": [
+      "$7,680.00",
+      "7,680",
+      "7680"
+    ],
+    "delivery": [
+      "15 business days",
+      "15 days"
+    ]
+  },
+  "charlie09": {
+    "supplier": [
+      "Keystone Safety Products"
+    ],
+    "item": [
+      "CRG-50",
+      "CRG 50"
+    ],
+    "quantity": [
+      "quantity 20",
+      "20 cases"
+    ],
+    "total_price": [
+      "$5,700.00",
+      "5,700",
+      "5700"
+    ],
+    "delivery": [
+      "10 business days",
+      "10 days"
+    ]
+  }
+}

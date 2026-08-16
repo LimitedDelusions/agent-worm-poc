@@ -1,79 +1,55 @@
-# Run and Monitor the POC
+# Run and Monitor
 
-## Goal
-
-Start the complete paid run with one command, monitor it, retrieve a verified evidence ZIP, and terminate the Pod.
-
-## Steps
-
-1. Open JupyterLab Terminal.
-2. Run:
+## Start
 
 ```bash
-cd /workspace/agent_worm_poc_v0.7.0
+cd /workspace/agent_worm_poc_v0.8.2
+export RUNPOD_HOURLY_RATE_USD="<exact displayed rate>"
+export MAX_TOTAL_COST_USD="25"
+export MAX_GPU_HOURS="8"
 bash scripts/runpod/start_gated_run.sh
 ```
 
-3. Copy the printed session ID and output path.
-4. Monitor periodically:
+The command returns immediately and prints a session ID and PID.
+
+## Monitor
 
 ```bash
-bash scripts/runpod/status.sh
+bash /workspace/agent_worm_poc_v0.8.2/scripts/runpod/status.sh
 ```
 
-5. Let the gate sequence proceed automatically:
-   - preflight;
-   - freeze model revisions;
-   - tests;
-   - fake validation;
-   - compatibility;
-   - positive propagation control;
-   - shakedown;
-   - full POC;
-   - packaging.
-6. If a gate fails, do not manually skip it.
-7. If cancellation is required:
+Check:
+
+- current gate and status;
+- recent log lines;
+- GPU memory and utilization;
+- evidence archive presence.
+
+## Normal gate order
+
+1. release audit and source integrity;
+2. model revision freeze;
+3. compatibility;
+4. combined positive-control and shakedown calibration;
+5. main 16-pair matrix;
+6. statistical summaries;
+7. blinded semantic-review packet;
+8. evidence packaging.
+
+## Safe cancellation
 
 ```bash
-bash scripts/runpod/cancel_run.sh
+bash /workspace/agent_worm_poc_v0.8.2/scripts/runpod/cancel_run.sh
 ```
 
-8. When the process is no longer running, locate the result ZIP and `.sha256` shown by `status.sh`.
-9. Download both through JupyterLab.
-10. Verify the ZIP locally.
-11. Extract it and read:
-    - `ARTIFACT_INDEX.md`;
-    - `PACKAGE_MANIFEST.json`;
-    - `outputs/NEXT_MEETING_SUMMARY.md`;
-    - `outputs/NEXT_MEETING_SUMMARY.json`.
-12. Confirm major POC logs and source snapshot are present.
-13. Terminate the Pod.
+Wait for `status.sh` to report NOT RUNNING before stopping or terminating the Pod.
 
-## Pass criteria
+## Completion
 
-- all four models pass compatibility;
-- positive control reaches two artifacts;
-- shakedown completes all four main scenarios;
-- POC completes all 24 placements and four scenarios;
-- repetitions are at least 2;
-- no response reuse occurs;
-- no failed/invalid workflows occur;
-- evidence package and checksum verify locally.
+A complete run has:
 
-The project’s recommendation to advance additionally requires benign utility, neutral two-hop propagation, and placement variation.
+```json
+"status": "completed"
+```
 
-## Stop criteria
-
-Stop and preserve partial evidence when:
-
-- compatibility fails;
-- positive control fails;
-- shakedown has a failed or invalid workflow;
-- the timeout or cost threshold is approached;
-- GPU memory is not released between models;
-- required logs disappear;
-- the packaged checksum cannot be produced.
-
-## Artifacts produced
-
-See `docs/ARTIFACTS.md`. The most important are the frozen model manifest, compatibility summary, positive-control evaluation, POC manifest, stage events, request catalog, run scores, placement summary, 12-pair intake→relay summary, meeting summary, source snapshot, package manifest, result ZIP, and ZIP checksum.
+An aborted run is still expected to produce a partial evidence ZIP. Download it before troubleshooting or terminating.

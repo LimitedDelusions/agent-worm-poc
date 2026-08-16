@@ -1,60 +1,40 @@
-name: Validate and Build Agent Worm POC Container
-
+name: Validate and Build Agent Worm POC
 on:
   workflow_dispatch:
-  push:
-    branches: ["main"]
-    tags: ["v0.7.0"]
-
 concurrency:
   group: agent-worm-poc-${{ github.ref }}
   cancel-in-progress: false
-
 env:
-  IMAGE_VERSION: 0.7.0
-
+  IMAGE_VERSION: 0.8.2
 jobs:
   validate:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Check out source
-        uses: actions/checkout@v6
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install validation-only tools
+      - name: Install validation tools
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
           python -m pip install --upgrade pip
-          python -m pip install PyYAML==6.0.3
-
+          python -m pip install -e ".[dev]" PyYAML==6.0.2
       - name: Normalize script permissions
         run: chmod +x scripts/runpod/*.sh
-
-      - name: Compile Python
+      - name: Compile and test
         env:
           PYTHONPATH: src
-        run: python -m compileall -q src scripts tests
-
-      - name: Run unit and integration tests
-        env:
-          PYTHONPATH: src
-        run: python -m unittest discover -s tests -v
-
-      - name: Validate shell scripts
+        run: |
+          python -m compileall -q src scripts tests
+          pytest -q
+      - name: Validate shell, JSON, and workflow YAML
         run: |
           find scripts -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
           shellcheck scripts/runpod/*.sh
-
-      - name: Validate JSON and workflow YAML
-        run: |
-          python - <<'PY'
+          python - <<'PYCODE'
           import json
           from pathlib import Path
           import yaml
@@ -62,39 +42,33 @@ jobs:
               json.loads(path.read_text(encoding='utf-8'))
           yaml.safe_load(Path('.github/workflows/validate-and-build.yml').read_text(encoding='utf-8'))
           print('JSON and YAML parsed successfully')
-          PY
-
-      - name: Run release audit
+          PYCODE
+      - name: Verify source integrity and release audit
         env:
           PYTHONPATH: src
-        run: python scripts/release/release_audit.py
-
-      - name: Run full simulated placement validation
+        run: |
+          python scripts/release/generate_integrity.py --check
+          sha256sum -c SOURCE_HASHES.sha256
+          python scripts/validate_release.py
+      - name: Run complete simulated gated validation
         env:
           PYTHONPATH: src
         run: |
           rm -rf outputs/ci-fake-validation
-          python -m agent_worm_poc.cli \
-            --project-root . \
-            --output-root outputs/ci-fake-validation \
-            fake-validation
-          python - <<'PY'
+          python scripts/run_gated.py fake-gated --root . --output-root outputs/ci-fake-validation
+          python - <<'PYCODE'
           import json
           from pathlib import Path
-          m=json.loads(Path('outputs/ci-fake-validation/fake_validation/manifest.json').read_text())
-          assert m['passed'] is True, m
-          p=m['poc']
-          assert p['placements'] == 24, p
-          assert p['planned_workflows'] == 96, p
-          assert p['failed_workflows'] == 0, p
-          assert p['schema_invalid_stages'] == 0, p
-          assert p['semantic_invalid_stages'] == 0, p
-          assert m['positive_control_evaluation']['passed'] is True, m
-          print(json.dumps(m, indent=2))
-          PY
-
-      - name: Upload validation evidence
-        uses: actions/upload-artifact@v7
+          statuses=list(Path('outputs/ci-fake-validation').glob('*/RUN_STATUS.json'))
+          assert len(statuses)==1,statuses
+          value=json.loads(statuses[0].read_text())
+          assert value['status']=='completed',value
+          assert value['gates']['compatibility']['passed'],value
+          assert value['gates']['positive_pair']['passed'],value
+          assert value['gates']['shakedown']['passed'],value
+          print(json.dumps(value,indent=2))
+          PYCODE
+      - uses: actions/upload-artifact@v4
         with:
           name: agent-worm-poc-validation
           path: |
@@ -103,7 +77,6 @@ jobs:
             outputs/ci-fake-validation
           if-no-files-found: error
           retention-days: 30
-
   build:
     needs: validate
     runs-on: ubuntu-latest
@@ -111,48 +84,27 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Check out source
-        uses: actions/checkout@v6
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      - name: Regenerate integrity files for the image build
-        env:
-          PYTHONPATH: src
+      - uses: actions/checkout@v4
+      - name: Free disk space
         run: |
-          chmod +x scripts/runpod/*.sh
-          python scripts/release/release_audit.py
-
-      - name: Compute immutable image names and build timestamp
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
+          docker system prune -af --volumes || true
+          df -h
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - name: Compute image metadata
         id: image
         shell: bash
         run: |
           echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
           echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-
-      - name: Free disk space for the 10.9 GB compressed vLLM base image
-        shell: bash
-        run: |
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
-          docker system prune -af --volumes || true
-          df -h
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build and push pinned amd64 image
+      - name: Build and push image
         id: build
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -169,45 +121,17 @@ jobs:
           tags: |
             ${{ steps.image.outputs.name }}:${{ env.IMAGE_VERSION }}
             ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ steps.image.outputs.created }}
-            org.opencontainers.image.version=${{ env.IMAGE_VERSION }}
-
-      - name: Create exact RunPod image reference
-        shell: bash
+      - name: Write immutable RunPod image reference
+        env:
+          IMAGE_NAME: ${{ steps.image.outputs.name }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p dist
-          IMAGE_REF="${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}"
-          printf '%s\n' "$IMAGE_REF" > dist/RUNPOD_IMAGE.txt
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          value = {
-              "schema_version": 1,
-              "image_reference": os.environ["IMAGE_REF"],
-              "source_repository": os.environ["GITHUB_REPOSITORY"],
-              "source_revision": os.environ["GITHUB_SHA"],
-              "version": os.environ["IMAGE_VERSION"],
-          }
-          Path("dist/IMAGE_BUILD.json").write_text(json.dumps(value, indent=2) + "\n")
-          PY
-        env:
-          IMAGE_REF: ${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}
-
-      - name: Upload RunPod image reference
-        uses: actions/upload-artifact@v7
+          printf '%s@%s\n' "$IMAGE_NAME" "$IMAGE_DIGEST" > dist/RUNPOD_IMAGE.txt
+          cat dist/RUNPOD_IMAGE.txt
+      - uses: actions/upload-artifact@v4
         with:
           name: agent-worm-poc-container-reference
-          path: dist
+          path: dist/RUNPOD_IMAGE.txt
           if-no-files-found: error
           retention-days: 90
-
-      - name: Summarize image
-        run: |
-          echo "### Container published" >> "$GITHUB_STEP_SUMMARY"
-          echo '```text' >> "$GITHUB_STEP_SUMMARY"
-          cat dist/RUNPOD_IMAGE.txt >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "Use the exact digest reference above in RunPod, not a mutable tag." >> "$GITHUB_STEP_SUMMARY"

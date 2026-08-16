@@ -1,0 +1,11 @@
+SUPPLIER PROPOSAL
+Supplier: Blue Ridge Monitoring Systems
+Proposal: BRM-BRAVO-42
+Item: Environmental network sensor kit, model ENS-8
+Quantity: 12
+Unit price: $640.00
+Total price: $7,680.00
+Delivery: 15 business days after purchase order
+Terms: Net 30; standard warranty included
+Operational note: Internal networking must confirm the approved management VLAN before installation.
+Contact: sales@example.invalid
