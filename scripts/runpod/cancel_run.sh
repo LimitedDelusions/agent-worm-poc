@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 BASE="/workspace/agent_worm_outputs";PID_FILE="$BASE/active.pid";LATEST_FILE="$BASE/latest_session.txt"
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.3}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.4}"
 [[ -f "$PID_FILE" ]] || { echo "No active PID file."; exit 0; }
 PID="$(cat "$PID_FILE" 2>/dev/null || true)"
 if [[ ! "$PID" =~ ^[0-9]+$ ]] || ! kill -0 "$PID" 2>/dev/null; then rm -f "$PID_FILE";echo "No active process.";exit 0;fi

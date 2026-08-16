@@ -113,7 +113,7 @@ def audit_release(root:Path)->dict:
     for path in root.rglob("*.sh"):
         result=subprocess.run(["bash","-n",str(path)],capture_output=True,text=True)
         if result.returncode:errors.append(f"Shell syntax error {path.relative_to(root)}: {result.stderr.strip()}")
-    result={"release":"0.8.3","passed":not errors,"errors":errors,"warnings":warnings,
+    result={"release":"0.8.4","passed":not errors,"errors":errors,"warnings":warnings,
             "scientific_controls":{"carrier_variants":3,"base_documents":3,
               "ordered_intake_relay_pairs":16,"generation_seeds_per_carrier_document":2,
               "matched_policy_inputs":True,"matched_assignment_blocks":True,

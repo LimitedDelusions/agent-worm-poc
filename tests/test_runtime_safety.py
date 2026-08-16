@@ -58,6 +58,12 @@ def test_operational_scripts_exist(root):
   assert (root/'scripts/runpod'/name).exists()
 
 
+def test_container_exposes_python_runtime_alias(root):
+ text=(root/'Dockerfile').read_text()
+ assert 'ln -sf "$(command -v python3)" /usr/local/bin/python' in text
+ assert 'python --version' in text
+
+
 def test_server_uses_reproducibility_controls(root):
  text=(root/'src/agent_worm_poc/server.py').read_text()
  assert '--generation-config' in text and 'vllm' in text and '--code-revision' in text

@@ -3,7 +3,7 @@
 ## Start
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.3
+cd /workspace/agent_worm_poc_v0.8.4
 export RUNPOD_HOURLY_RATE_USD="<exact displayed rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -15,7 +15,7 @@ The command returns immediately and prints a session ID and PID.
 ## Monitor
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.3/scripts/runpod/status.sh
+bash /workspace/agent_worm_poc_v0.8.4/scripts/runpod/status.sh
 ```
 
 Check:
@@ -39,7 +39,7 @@ Check:
 ## Safe cancellation
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.3/scripts/runpod/cancel_run.sh
+bash /workspace/agent_worm_poc_v0.8.4/scripts/runpod/cancel_run.sh
 ```
 
 Wait for `status.sh` to report NOT RUNNING before stopping or terminating the Pod.

@@ -1,4 +1,4 @@
-# Scientific Validity Audit — v0.8.3
+# Scientific Validity Audit — v0.8.4
 
 ## Primary question
 

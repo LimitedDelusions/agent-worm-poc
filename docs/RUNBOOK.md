@@ -1,4 +1,4 @@
-# Complete v0.8.3 Runbook
+# Complete v0.8.4 Runbook
 
 This runbook is deliberately gated. Follow it in order and do not skip a gate.
 
@@ -7,8 +7,8 @@ This runbook is deliberately gated. Follow it in order and do not skip a gate.
 ### A1. Verify release integrity
 
 ```powershell
-Get-FileHash .\agent_worm_poc_v0.8.3.zip -Algorithm SHA256
-Get-Content .\agent_worm_poc_v0.8.3.zip.sha256
+Get-FileHash .\agent_worm_poc_v0.8.4.zip -Algorithm SHA256
+Get-Content .\agent_worm_poc_v0.8.4.zip.sha256
 ```
 
 **End goal:** the two SHA-256 values match.
@@ -19,9 +19,9 @@ Get-Content .\agent_worm_poc_v0.8.3.zip.sha256
 
 Follow `CODING_HANDOFF.md`. Do not overlay files on v0.7.0.
 
-**End goal:** one clean repository containing only v0.8.3 plus `.git`.
+**End goal:** one clean repository containing only v0.8.4 plus `.git`.
 
-**Artifacts:** commit SHA and tag `v0.8.3`.
+**Artifacts:** commit SHA and tag `v0.8.4`.
 
 ### A3. Run local/free tests
 
@@ -166,7 +166,7 @@ Record final balance and calculate observed decrease.
 Terminate—not merely stop—the Pod after local evidence verification.
 
 **Final end goal:** one complete, verified, locally stored evidence package and no continuing billing. The script cannot terminate the RunPod resource itself; the operator must terminate the Pod after verification.
-## Scientific design lock (v0.8.3)
+## Scientific design lock (v0.8.4)
 
 Review these before another paid run:
 

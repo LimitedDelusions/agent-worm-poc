@@ -1,8 +1,8 @@
-# Final Validation Report — Agent Worm POC v0.8.3
+# Final Validation Report — Agent Worm POC v0.8.4
 
 ## Release status
 
-**Local validation passed.** This release supersedes v0.8.2 after its hosted validation stopped on ShellCheck warning `SC2155` before container build. The shell assignment/export correction does not change runtime behavior. It retains the RunPod session startup, model-process credential isolation, and remote-code revision-pinning repairs introduced after the v0.8.1 audit; the locked scientific design is unchanged.
+**Local validation passed.** This release supersedes v0.8.3 after hosted validation passed but Docker build found that the pinned vLLM base lacked a `python` command. v0.8.4 restores the proven `python3` runtime alias and tests it statically. It retains the ShellCheck, RunPod session startup, model-process credential isolation, and remote-code revision-pinning repairs; the locked scientific design is unchanged.
 
 The project was validated from the source tree and then through the complete simulated gated workflow. The simulated outputs validate software behavior, experimental case construction, scoring, gates, statistical artifact generation, evidence packaging, and release integrity. They are not AI-security findings.
 
@@ -24,7 +24,7 @@ The project was validated from the source tree and then through the complete sim
 
 | Validation | Result |
 |---|---:|
-| Automated unit/integration tests | 65 passed |
+| Automated unit/integration tests | 66 passed |
 | Release/design audit | Passed |
 | Release-audit warnings | 0 |
 | Integrity-manifest files | 80 |

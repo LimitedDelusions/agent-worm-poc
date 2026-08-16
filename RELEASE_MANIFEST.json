@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release": "0.8.3",
+  "release": "0.8.4",
   "file_count": 80,
   "files": [
     {
@@ -16,7 +16,7 @@
     {
       "path": ".github/workflows/validate-and-build.yml",
       "size": 4891,
-      "sha256": "b40d45b6047a508a6479aeb1f8759c8ab43f58419cd3f2f2a5899190f8cf86ff"
+      "sha256": "96913669ea34ef3749eac3bc0a3ef49f339798994cd06db5adb7d83893097431"
     },
     {
       "path": ".gitignore",
@@ -26,12 +26,12 @@
     {
       "path": "AUDIT_REPORT.md",
       "size": 3693,
-      "sha256": "66b6225bc4b78d0139ac68d152ac27f687ac94d3992d01309c8e81a6900f7523"
+      "sha256": "40c6c556c2b414e7f7551e29832707402ae185b037b8991433561064555534a2"
     },
     {
       "path": "CODING_HANDOFF.md",
-      "size": 2537,
-      "sha256": "ae1ef19d4741727a6a0b27f9caf030f40237915b3e34ad312a435a3819b8724e"
+      "size": 2543,
+      "sha256": "50cbcfba4476b35f690dac650ac1b947c4ab1f05696fb9def2eacc60d2165e8e"
     },
     {
       "path": "configs/expected_facts.json",
@@ -41,7 +41,7 @@
     {
       "path": "configs/experiment.json",
       "size": 3142,
-      "sha256": "a78d0fc0dc76ec08584e37030ed78b69f642647ed3beb26cb8593c14fe597153"
+      "sha256": "ec107ab376644b5887af852ec4d5bd9b33a38c7af574f1845a82d87cfe49a293"
     },
     {
       "path": "configs/models.json",
@@ -51,7 +51,7 @@
     {
       "path": "configs/preregistration.json",
       "size": 4910,
-      "sha256": "f2dc8c4d5d7d5a7623792caba9b810b9bbb271c87f1f06395a1bfc4a697ec388"
+      "sha256": "43c00ee153512c391ce7bef9a7e6c0fd31561275c79747fb61f414d638f1f0d3"
     },
     {
       "path": "configs/prompts.json",
@@ -81,12 +81,12 @@
     {
       "path": "DEPLOYMENT_CHECKLIST.md",
       "size": 2441,
-      "sha256": "b42a452009e6608268f586db4adfe67f632d7bb63a9ae9e673ed598c46592c3a"
+      "sha256": "57616939834f778cc3bd94196cbe63e55ab7f60ab178eaa843b43cae5f105b86"
     },
     {
       "path": "Dockerfile",
-      "size": 2307,
-      "sha256": "5991d7e1963180970b840a3e32675401cdb461e93e8e4eef8e9ef321ecacd49b"
+      "size": 2395,
+      "sha256": "48c989a687c00ea52867f13bd2b1de7140e8ca7c300f1420c89ac7408a27ab29"
     },
     {
       "path": "docs/ARTIFACTS.md",
@@ -106,12 +106,12 @@
     {
       "path": "docs/EXPERIMENT_DESIGN.md",
       "size": 3298,
-      "sha256": "bd76fabfb9ac6d879c49e46a5b79fee569baa5e0efcb2a80c6b014f5c8a18b9e"
+      "sha256": "c7fc8a93ba5c31f87c973fe418b261aa449d60a49fc03b706ee7b4e812be8490"
     },
     {
       "path": "docs/GITHUB_BUILD.md",
       "size": 808,
-      "sha256": "1191d06878cf349c14e922581f0686648ac4833d0d0552f274c4f9744887e1d8"
+      "sha256": "2d21d42e4b57531c24a30578540dba8c2b89d7fee147c5ba1f2e54c52a6bfb84"
     },
     {
       "path": "docs/INSTRUCTOR_OUTPUT.md",
@@ -141,22 +141,22 @@
     {
       "path": "docs/RUN_AND_MONITOR.md",
       "size": 1143,
-      "sha256": "346925246bd7377222cfbc7b803e622b3f1dc72d3fcd5104b11a2251ce12356b"
+      "sha256": "ff8abfd45c0ca82b3dee70edc031da1e92fc97fd79e3952b028c334df2939fc0"
     },
     {
       "path": "docs/RUNBOOK.md",
       "size": 5996,
-      "sha256": "40f3ccc968bd70b667484e040923ab62615040237f4e3be5b70e2e02389bfad1"
+      "sha256": "a426538ce1156a9ed36fc54b25b2d67a89ef47164f45d9ced59bf8dcbec1b5da"
     },
     {
       "path": "docs/RUNPOD_SETUP.md",
       "size": 2159,
-      "sha256": "7bfbd7a72972056670d0829245cffb057b5a84fc108b576a375e1c009d91d0eb"
+      "sha256": "14c368e6d38c99b75ef2bf3bc7d4737bf391117be36c6a8f88da5b8679448b79"
     },
     {
       "path": "docs/SCIENTIFIC_VALIDITY_AUDIT.md",
       "size": 2522,
-      "sha256": "6895f6a58033e6189be89b414161eebeb764a6c11204344262418e8c97a85a4a"
+      "sha256": "bd8a874d0035326601a2d53638c07518c982a6b631118af6c1b55730f1cd8788"
     },
     {
       "path": "docs/SEMANTIC_REVIEW_PROTOCOL.md",
@@ -166,7 +166,7 @@
     {
       "path": "docs/STATISTICAL_ANALYSIS.md",
       "size": 1919,
-      "sha256": "a800abee6068cb875da6138c5912e9754473bc501d853e5fb57977c348325fae"
+      "sha256": "1456f9f5f3d5ea6ed0bff8456c3916793c44fdf62e74f95592c1c5e7c2900ebf"
     },
     {
       "path": "docs/THREAT_MODEL.md",
@@ -175,18 +175,18 @@
     },
     {
       "path": "FINAL_VALIDATION_REPORT.md",
-      "size": 4733,
-      "sha256": "da9ac8e589a3f6d2ecfd588c292a6294702a7a3dcd98478aa0f56e117a9398a6"
+      "size": 4730,
+      "sha256": "7917e9bdf35c5d9e793476a2c9b57cca30017dd8a13d4fd67105e8dcb2309145"
     },
     {
       "path": "pyproject.toml",
       "size": 746,
-      "sha256": "52ac8cf0ef5af9a37fbcbd154c54f0cdf28bd0ab25f3d560d28feaaae424863a"
+      "sha256": "527ab0ebc199b7d0aac3cf3b1c10cf712c982742adaadaca531c815faa04fbab"
     },
     {
       "path": "README.md",
       "size": 1485,
-      "sha256": "7c13872c69a835e6d7a12190b368bc2fa7299f2f7ecd5da258afe6ee0de3807d"
+      "sha256": "175c255b0442664084a427986d83c0403c3f3f593ca7ba5911a800a0f371cabe"
     },
     {
       "path": "scripts/check_scientific_shakedown.py",
@@ -211,17 +211,17 @@
     {
       "path": "scripts/runpod/cancel_run.sh",
       "size": 1279,
-      "sha256": "2202a120a9430ced2b4f6978b23b8e821b1d170a6fc60dd0253c0ec1f79f32e0"
+      "sha256": "9ca0f3f841f29242f100dd14b34d0d6c52fad2159a9242753e99374f0f255bf6"
     },
     {
       "path": "scripts/runpod/entrypoint.sh",
       "size": 3061,
-      "sha256": "9602e2cfe94cafa066d8e44b2f4710b3b0281f56d1010f13364facba74ef1f37"
+      "sha256": "ccb899367866f29921259286d4d6b8fb8cf0122d85ef408c08fc3ae18291c905"
     },
     {
       "path": "scripts/runpod/start_gated_run.sh",
       "size": 3510,
-      "sha256": "aaa121a71e2e563c7deeb360a3932dbc7a727f53798562d4cc31048aa2461ae8"
+      "sha256": "e105c75cf1bce4d1f1018ebd8953918c2748dae211d2b7362f8ea013fd0a6bb0"
     },
     {
       "path": "scripts/runpod/status.sh",
@@ -236,7 +236,7 @@
     {
       "path": "src/agent_worm_poc/__init__.py",
       "size": 22,
-      "sha256": "a2d9f07e6bc92d46a63da8d33d46887a488ef6603ed873e2fbf87f13437eb8e4"
+      "sha256": "8e11c42456568644037a6a1932898162af9136b29792763351a78853d03a5ec2"
     },
     {
       "path": "src/agent_worm_poc/adapters.py",
@@ -266,7 +266,7 @@
     {
       "path": "src/agent_worm_poc/config.py",
       "size": 880,
-      "sha256": "6bcd4a7e8eb270186d0ef08089e2b3ecd1a79deb054e1a05bb7a419d1af1df13"
+      "sha256": "82bcaf509e64a44b156b7d6d6bef52111c632e3da35934457d9223dbe988a0f5"
     },
     {
       "path": "src/agent_worm_poc/engine.py",
@@ -281,7 +281,7 @@
     {
       "path": "src/agent_worm_poc/placements.py",
       "size": 2217,
-      "sha256": "a5814795a270e6734fc8ae9f7cb9e717fed5fcc71ae670527c4a0d5913b7d9e3"
+      "sha256": "72d1a2df59586ccc8feb473cc7abc47e4688c80386aa4f033261881581c93e46"
     },
     {
       "path": "src/agent_worm_poc/prompts.py",
@@ -291,7 +291,7 @@
     {
       "path": "src/agent_worm_poc/release_audit.py",
       "size": 10197,
-      "sha256": "16916b68db3a36da4dfb850c9a6a7738824cb39edd820b10f61b295b785d6e45"
+      "sha256": "80435a0a23b642d3f6b27ef7eaefa8586492a3531d957ac07c6649b2aac2e6d7"
     },
     {
       "path": "src/agent_worm_poc/review.py",
@@ -335,8 +335,8 @@
     },
     {
       "path": "START_HERE.md",
-      "size": 3438,
-      "sha256": "bb205f7cbc797af9dfc6d017459017b58ef0ba5b859cfbc5222c6d366ea583ee"
+      "size": 3542,
+      "sha256": "953503a04e21d770d68ea00e391b1163936c21efba4a884230f1efdd0a3f30dc"
     },
     {
       "path": "tests/conftest.py",
@@ -390,8 +390,8 @@
     },
     {
       "path": "tests/test_runtime_safety.py",
-      "size": 3203,
-      "sha256": "af79af6f98d5c50f28cd4d849b2a8e8151f46908f5b6cfdd046d4a495a920202"
+      "size": 3404,
+      "sha256": "29e1980948e6e2a850eb4a4b41dff7f871aac28eb3449fbc2aacd0c829a3665b"
     },
     {
       "path": "tests/test_scientific_gates.py",
@@ -401,7 +401,7 @@
     {
       "path": "VERSION",
       "size": 6,
-      "sha256": "780363b8ef02ff7e83eb72709f6396b09dec21a26403bb44f58ea8d6757fe33d"
+      "sha256": "cf6a05db55c83ecdf0b3323be40d441e20f4bbd3860a3f4104a9dab70fbae161"
     }
   ]
 }

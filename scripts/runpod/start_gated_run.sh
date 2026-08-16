@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.3}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.4}"
 BASE="/workspace/agent_worm_outputs"
 PID_FILE="$BASE/active.pid"
 LATEST_FILE="$BASE/latest_session.txt"
@@ -47,7 +47,7 @@ Path(path).write_text(json.dumps({
  'started_epoch':time.time(),'runpod_hourly_rate_usd':float(rate),'maximum_cost_usd':float(cap),
  'hard_timeout_seconds':int(seconds),'active_timeout_seconds':int(os.environ['ACTIVE_SECONDS']),
  'container_image_reference':os.environ['AGENT_WORM_IMAGE_REF'],
- 'project_root':os.environ.get('AGENT_WORM_PROJECT_ROOT','/workspace/agent_worm_poc_v0.8.3')},indent=2)+'\n')
+ 'project_root':os.environ.get('AGENT_WORM_PROJECT_ROOT','/workspace/agent_worm_poc_v0.8.4')},indent=2)+'\n')
 PYCODE
 nohup setsid env AGENT_WORM_RUN_ID="$SESSION_ID" AGENT_WORM_PRECREATED_RUN_DIR=1 RUNPOD_HOURLY_RATE_USD="$RATE" \
   PYTHONPATH="$ROOT/src" timeout --signal=TERM --kill-after=10m "$ACTIVE_SECONDS" \
@@ -57,7 +57,7 @@ PID=$!
 printf '%s\n' "$PID" > "$PID_FILE"
 printf '%s\n' "$PID" > "$RUN_DIR/session/gated-run.pid"
 cat <<INFO
-Started Agent Worm POC v0.8.3.
+Started Agent Worm POC v0.8.4.
 Session: $SESSION_ID
 PID: $PID
 Maximum gated-run cost: \$$MAX_TOTAL_COST_USD at \$$RATE/hour

@@ -1,4 +1,4 @@
-# Start Here — Agent Worm POC v0.8.3
+# Start Here — Agent Worm POC v0.8.4
 
 ## End goal
 
@@ -6,9 +6,9 @@ Produce defensible evidence showing whether the **ordered intake-to-relay model 
 
 This POC decides whether the research question is measurable enough to advance to the full SANS proposal. It does not prove a universal ranking of model families.
 
-## Why v0.8.3 replaces v0.8.2
+## Why v0.8.4 replaces v0.8.3
 
-The v0.8.2 hosted validation stopped on ShellCheck warning `SC2155` before the container build began. v0.8.3 separates the affected shell assignment from its export, with no change to runtime behavior or the locked scientific design.
+The v0.8.3 hosted validation passed, but its Docker build stopped before push because the pinned vLLM base exposed `python3` without a `python` command. v0.8.4 restores the previously proven Python runtime alias and adds a regression test for it. It retains v0.8.3's ShellCheck correction, with no change to the locked scientific design.
 
 ## Operational hardening inherited from v0.8.2
 
@@ -18,7 +18,7 @@ The v0.8.1 pre-publish audit found three operational blockers that could have fa
 2. vLLM child processes inherited unrelated interactive and provider credentials;
 3. trusted remote model code did not receive the frozen model revision explicitly, and the downloaded reasoning-parser plugin was not re-hashed immediately before execution.
 
-v0.8.3 retains those launch, secret-isolation, and provenance repairs. It preserves v0.8.1's prompts, carriers, scoring, scientific gates, sample construction, model repositories, and generation configuration unchanged.
+v0.8.4 retains those launch, secret-isolation, and provenance repairs. It preserves v0.8.1's prompts, carriers, scoring, scientific gates, sample construction, model repositories, and generation configuration unchanged.
 
 ## The three gates
 
@@ -45,13 +45,13 @@ If any earlier gate fails, the program stops and packages partial evidence.
 Follow `docs/RUNPOD_SETUP.md`. On the Pod, the project is copied to:
 
 ```text
-/workspace/agent_worm_poc_v0.8.3
+/workspace/agent_worm_poc_v0.8.4
 ```
 
 From a Jupyter terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.3
+cd /workspace/agent_worm_poc_v0.8.4
 export RUNPOD_HOURLY_RATE_USD="<exact displayed total hourly rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -61,7 +61,7 @@ bash scripts/runpod/start_gated_run.sh
 Monitor from a second terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.3
+cd /workspace/agent_worm_poc_v0.8.4
 bash scripts/runpod/status.sh
 ```
 
