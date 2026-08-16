@@ -1,4 +1,4 @@
-import csv,json,zipfile
+import csv,hashlib,json,zipfile
 from agent_worm_poc.review import build_blinded_review
 from agent_worm_poc.cli import gated
 from agent_worm_poc.evidence import package_results
@@ -30,6 +30,15 @@ def test_evidence_zip_and_hash(root,tmp_path):
  with zipfile.ZipFile(out) as archive:
   assert archive.testzip() is None
   assert any(name.endswith('PACKAGE_MANIFEST.json') for name in archive.namelist())
+  release_manifest=json.loads((root/'RELEASE_MANIFEST.json').read_text())
+  for row in release_manifest['files']:
+   name='evidence_package/source_snapshot/'+row['path']
+   assert name in archive.namelist(),name
+   assert hashlib.sha256(archive.read(name)).hexdigest()==row['sha256']
+  prefix='evidence_package/source_snapshot/'
+  snapshot_files={name.removeprefix(prefix) for name in archive.namelist() if name.startswith(prefix)}
+  expected_files={row['path'] for row in release_manifest['files']}|{'RELEASE_MANIFEST.json','SOURCE_HASHES.sha256'}
+  assert snapshot_files==expected_files
 
 
 def test_fake_gated_accepts_runpod_precreated_session(root,tmp_path,monkeypatch):

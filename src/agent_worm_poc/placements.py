@@ -37,7 +37,7 @@ def pair_id(mapping: dict[str,str]) -> str:
 
 
 def balanced_shakedown(placements: list[dict[str,str]], count: int = 8) -> list[dict[str,str]]:
-    """Legacy helper for future reduced shakedowns; current v0.8.4 uses all 16 pairs."""
+    """Legacy helper for future reduced shakedowns; current v0.8.5 uses all 16 pairs."""
     chosen=[];remaining=list(placements)
     role_counts={(r,m):0 for r in ROLES for m in {v for p in placements for v in p.values()}}
     pair_counts={}

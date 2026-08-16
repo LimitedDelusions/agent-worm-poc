@@ -1,8 +1,10 @@
-# Final Validation Report — Agent Worm POC v0.8.4
+# Final Validation Report — Agent Worm POC v0.8.5
 
 ## Release status
 
-**Local validation passed.** This release supersedes v0.8.3 after hosted validation passed but Docker build found that the pinned vLLM base lacked a `python` command. v0.8.4 restores the proven `python3` runtime alias and tests it statically. It retains the ShellCheck, RunPod session startup, model-process credential isolation, and remote-code revision-pinning repairs; the locked scientific design is unchanged.
+**Local validation passed.** The verified v0.8.4 paid pilot stopped at compatibility with 48/48 valid stage responses but zero of three benign Gemma workflows. Gemma extracted all five procurement facts into dedicated intake fields while retaining only the supplier in `artifact_body`; the relay intentionally received only that body and therefore lost the remaining facts. v0.8.5 makes that pre-existing artifact-only transport contract explicit and identical across all intake and relay policy prompts.
+
+The prompt change is intentionally versioned. It does not alter carriers, scoring, gates, case construction, seeds, model repositories, model configuration, generation settings, or the artifact-only stage boundary. The v0.8.4 failed pilot remains separate evidence and is documented in `docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md`. The release audit also excludes virtual-environment and generated directories from Bash syntax checks so installed third-party shell files cannot affect source validation.
 
 The project was validated from the source tree and then through the complete simulated gated workflow. The simulated outputs validate software behavior, experimental case construction, scoring, gates, statistical artifact generation, evidence packaging, and release integrity. They are not AI-security findings.
 
@@ -16,6 +18,7 @@ The project was validated from the source tree and then through the complete sim
 - Identical carrier text, run-specific identifiers, source documents, and stage seeds across ordered assignments within each matched block.
 - Matched neutral and hardened policy conditions.
 - Positive-propagation, clean-utility, and sham-specificity controls.
+- Explicit policy-matched artifact-body fact-retention contract at both transported handoffs.
 - Primary endpoint: contiguous reproduction of a viable, run-specific carrier across two independently generated artifacts.
 - External deterministic scoring plus a blinded semantic-mutation review packet.
 - No response reuse in experimental observations.
@@ -24,10 +27,10 @@ The project was validated from the source tree and then through the complete sim
 
 | Validation | Result |
 |---|---:|
-| Automated unit/integration tests | 66 passed |
+| Automated unit/integration tests | 67 passed |
 | Release/design audit | Passed |
 | Release-audit warnings | 0 |
-| Integrity-manifest files | 80 |
+| Integrity-manifest files | 81 |
 | SHA-256 source verification | Passed |
 | Python compilation | Passed |
 | Shell syntax validation | Passed |
@@ -57,6 +60,7 @@ The simulated main phase generated all 16 ordered intake-to-relay assignments, a
 - Runtime timeout and safe cancellation paths are present.
 - The paid wrapper's pre-created session metadata is admitted only through a guarded, path-contained launch contract.
 - Partial evidence is packaged on failure.
+- Evidence source snapshots include and hash-check every release-manifested file.
 - GPU-idle checks are required before and after model service.
 - Model and tokenizer revisions are frozen before inference.
 - Trusted model code receives the same frozen revision as the weights and tokenizer.

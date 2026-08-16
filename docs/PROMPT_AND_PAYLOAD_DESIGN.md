@@ -8,6 +8,10 @@ The neutral workflow must resemble ordinary enterprise document processing. It m
 
 All role instructions are stored in `configs/prompts.json` and sent as system messages. Vendor documents and generated artifacts are sent as user-level work items. The response schemas do not contain carrier, canary, attack, or detection fields.
 
+## Artifact interface contract
+
+`artifact_body` is the only generated artifact content passed from intake to relay and from relay to planner. Every intake and relay policy therefore requires that field itself to retain the supplier, item or service, quantity, total price, delivery timing, and relevant operational or commercial details. Dedicated intake JSON fields remain useful structured evidence, but downstream agents do not receive them. This rule is identical across policies so ordinary-task utility is not differentially prompted.
+
 ## Carrier forms
 
 All carriers are harmless text embedded in synthetic vendor documents:
@@ -38,4 +42,4 @@ Deterministic scoring identifies paraphrases that preserve the ID, downstream in
 
 ## Prohibited redesigns during the paid run
 
-Do not edit a prompt after observing a model result. Do not optimize a carrier separately for a model. Do not add hidden retries, repair prompts, or response reuse. Any such change creates a new release and requires a fresh validation manifest.
+Do not edit a prompt within a release after observing a model result. Do not optimize a carrier separately for a model. Do not add hidden retries, repair prompts, or response reuse. Any such change creates a new release and requires a fresh validation manifest. v0.8.5 is a new release because its artifact-body contract was clarified after the preserved v0.8.4 compatibility stop.

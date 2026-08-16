@@ -4,7 +4,7 @@
 
 - RunPod account with credits
 - Hugging Face read token stored as RunPod secret `huggingface_token`
-- Jupyter password stored as RunPod secret `jupyter_password`
+- random Jupyter password of at least 16 characters stored as RunPod secret `jupyter_password`
 - Gemma license accepted on the same Hugging Face account
 - immutable image reference from GitHub Actions
 
@@ -13,11 +13,13 @@
 1. Sign in to RunPod.
 2. Select **Pods** → **Deploy**.
 3. Choose one on-demand **A100 80 GB**. PCIe or SXM is acceptable.
-4. Enter Pod name `agent-worm-v084`.
-5. In **Custom Image**, paste the exact digest from `RUNPOD_IMAGE.txt`.
-6. Configure a persistent volume of at least **350 GB** mounted at `/workspace`.
-7. Expose HTTP port **8888**.
-8. Do not expose a public vLLM port.
+4. Enter Pod name `agent-worm-v085`.
+5. In **Container Image** (called **Custom Image** in older screens), paste the exact digest from `RUNPOD_IMAGE.txt`.
+6. Leave **Container start command** blank so the image entrypoint runs.
+7. Set **Container disk** to at least **50 GB**.
+8. Under persistent storage, prefer a **350 GB Volume Disk** mounted at `/workspace`; it survives Stop but is deleted with the Pod at Terminate. If a **Network Volume** is used instead, it survives Pod termination and must be deleted separately after local evidence verification to stop storage billing.
+9. Expose HTTP port **8888**.
+10. Do not expose a public vLLM port or internal port 8000.
 
 ## 2. Add environment variables
 
@@ -39,15 +41,15 @@ The hourly rate should be entered after the Pod starts because the exact display
 3. Select **Connect**.
 4. Open HTTP service port 8888.
 5. Log in using the Jupyter password.
-6. Open **File → New → Terminal**.
+6. Open **File → New → Terminal**. If Jupyter does not initialize, use RunPod's **Web Terminal**; the experiment does not depend on the notebook UI.
 
 ## 4. Verify the container
 
 ```bash
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
-ls -la /workspace/agent_worm_poc_v0.8.4
+ls -la /workspace/agent_worm_poc_v0.8.5
 cat /opt/agent-worm-runtime.json
-cd /workspace/agent_worm_poc_v0.8.4
+cd /workspace/agent_worm_poc_v0.8.5
 sha256sum -c SOURCE_HASHES.sha256
 ```
 
@@ -58,7 +60,7 @@ Expected GPU memory is approximately 80 GB. Do not continue if source verificati
 Copy the total hourly price displayed by RunPod, then:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.4
+cd /workspace/agent_worm_poc_v0.8.5
 export RUNPOD_HOURLY_RATE_USD="<displayed total hourly rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -68,8 +70,8 @@ bash scripts/runpod/start_gated_run.sh
 Open a second terminal and monitor:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.4
+cd /workspace/agent_worm_poc_v0.8.5
 bash scripts/runpod/status.sh
 ```
 
-Do not manually install packages or edit prompts on the paid Pod.
+Do not manually install packages or edit prompts on the paid Pod. The in-container timeout stops the experiment process, not RunPod billing; keep an independent alarm and terminate the Pod from the RunPod console after evidence is verified locally.

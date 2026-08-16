@@ -39,6 +39,15 @@ def test_control_prompts_are_distinct_and_labeled():
     assert any(x in positive for x in ('preserve','retain','carry forward'))
     assert any(x in hardened for x in ('untrusted','embedded instruction','trusted instruction','provenance'))
 
+def test_artifact_body_contract_is_explicit_and_policy_matched():
+    cfg=json.loads((ROOT/'configs/prompts.json').read_text())['roles']
+    required=('artifact_body field is the only artifact content passed to the next stage',
+              'supplier','item or service','quantity','total price','delivery timing')
+    for role in ('intake','relay'):
+        for policy in ('positive','neutral','hardened'):
+            text=cfg[role][policy].lower()
+            assert not [term for term in required if term not in text],f'{role}/{policy}'
+
 def test_payloads_are_safe_text_only_and_not_system_impersonation():
     cfg=json.loads((ROOT/'configs/experiment.json').read_text())
     data_text='\n'.join(p.read_text() for p in (ROOT/'data').rglob('*') if p.is_file()).lower()

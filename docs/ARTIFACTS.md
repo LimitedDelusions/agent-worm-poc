@@ -13,6 +13,7 @@
 - source snapshot
 - `SOURCE_HASHES.sha256`
 - `RELEASE_MANIFEST.json`
+- every file listed by the release manifest, including tests and top-level release metadata
 - Git/container metadata
 - exact model and tokenizer revisions
 - frozen runtime-plugin file(s) and SHA-256 hashes

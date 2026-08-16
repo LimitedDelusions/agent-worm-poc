@@ -12,6 +12,7 @@ REQUIRED=(
     "AUDIT_REPORT.md","FINAL_VALIDATION_REPORT.md","SOURCE_HASHES.sha256","RELEASE_MANIFEST.json",".dockerignore",".gitignore",
     "configs/models.json","configs/experiment.json","configs/preregistration.json","configs/prompts.json","configs/schemas.json",
     "docs/RUNBOOK.md","docs/EXPERIMENT_DESIGN.md","docs/STATISTICAL_ANALYSIS.md","docs/ARTIFACTS.md",
+    "docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md",
     ".github/workflows/validate-and-build.yml",
     "scripts/runpod/entrypoint.sh","scripts/runpod/start_gated_run.sh","scripts/runpod/status.sh","scripts/runpod/cancel_run.sh",
     "src/agent_worm_poc/engine.py","src/agent_worm_poc/scoring.py","src/agent_worm_poc/scientific_gates.py",
@@ -50,6 +51,13 @@ def audit_release(root:Path)->dict:
         for role in prompts:
             policies={prompts[role][policy] for policy in ("positive","neutral","hardened")}
             if len(policies)!=3:errors.append(f"Role {role} does not have three distinct policies")
+        artifact_contract_terms=("artifact_body field is the only artifact content passed to the next stage",
+                                 "supplier","item or service","quantity","total price","delivery timing")
+        for role in ("intake","relay"):
+            for policy in ("positive","neutral","hardened"):
+                prompt=prompts[role][policy].lower()
+                missing=[term for term in artifact_contract_terms if term not in prompt]
+                if missing:errors.append(f"Prompt {role}/{policy} is missing artifact-body contract terms: {', '.join(missing)}")
         main=build_main_cases(exp,slots,root/"data/base_documents")
         expected_main=672
         if len(main)!=expected_main:errors.append(f"Expected {expected_main} main workflows, found {len(main)}")
@@ -107,17 +115,21 @@ def audit_release(root:Path)->dict:
     secrets=ensure_no_secret_text(root)
     if secrets:errors.append("Possible embedded secrets: "+", ".join(secrets))
     for path in root.rglob("*.py"):
-        if any(part in {".git",".venv","__pycache__"} for part in path.parts):continue
+        if any(part in {".git",".venv","__pycache__",".pytest_cache",".ruff_cache","outputs","dist","build"}
+               or part.endswith(".egg-info") for part in path.parts):continue
         try:ast.parse(path.read_text(encoding="utf-8"),filename=str(path))
         except SyntaxError as exc:errors.append(f"Python syntax error {path.relative_to(root)}: {exc}")
     for path in root.rglob("*.sh"):
+        if any(part in {".git",".venv","__pycache__",".pytest_cache",".ruff_cache","outputs","dist","build"}
+               or part.endswith(".egg-info") for part in path.parts):continue
         result=subprocess.run(["bash","-n",str(path)],capture_output=True,text=True)
         if result.returncode:errors.append(f"Shell syntax error {path.relative_to(root)}: {result.stderr.strip()}")
-    result={"release":"0.8.4","passed":not errors,"errors":errors,"warnings":warnings,
+    result={"release":"0.8.5","passed":not errors,"errors":errors,"warnings":warnings,
             "scientific_controls":{"carrier_variants":3,"base_documents":3,
               "ordered_intake_relay_pairs":16,"generation_seeds_per_carrier_document":2,
               "matched_policy_inputs":True,"matched_assignment_blocks":True,
               "response_reuse_allowed":False,"positive_control_all_ordered_pairs":True,
+              "artifact_body_contract_explicit":True,
               "hardened_negative_control":True,"sham_specificity_control":True,
               "semantic_review_blinded":True,"nemotron_runtime_plugin_frozen_at_gate":True,
               "model_code_revision_frozen_at_gate":True,"model_server_credentials_filtered":True,

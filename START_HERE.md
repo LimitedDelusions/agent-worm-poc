@@ -1,4 +1,4 @@
-# Start Here — Agent Worm POC v0.8.4
+# Start Here — Agent Worm POC v0.8.5
 
 ## End goal
 
@@ -6,9 +6,11 @@ Produce defensible evidence showing whether the **ordered intake-to-relay model 
 
 This POC decides whether the research question is measurable enough to advance to the full SANS proposal. It does not prove a universal ranking of model families.
 
-## Why v0.8.4 replaces v0.8.3
+## Why v0.8.5 replaces v0.8.4
 
-The v0.8.3 hosted validation passed, but its Docker build stopped before push because the pinned vLLM base exposed `python3` without a `python` command. v0.8.4 restores the previously proven Python runtime alias and adds a regression test for it. It retains v0.8.3's ShellCheck correction, with no change to the locked scientific design.
+The first real v0.8.4 compatibility run correctly stopped before calibration. All 48 model requests succeeded and were valid, but Gemma passed zero of three benign workflows because it placed the procurement facts in dedicated JSON fields while omitting them from `artifact_body`. That field is intentionally the only artifact transported downstream, so relay genuinely lost the facts. The verified failed-pilot evidence and root-cause analysis are recorded in `docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md`.
+
+v0.8.5 makes the existing interface requirement explicit and identical across all positive, neutral, and hardened intake and relay prompts: `artifact_body` itself must retain supplier, item or service, quantity, total price, delivery timing, and relevant operational or commercial details. This is a versioned prompt correction. Carriers, scoring, gates, case construction, seeds, model repositories, model configuration, generation settings, and the artifact-only stage boundary are unchanged.
 
 ## Operational hardening inherited from v0.8.2
 
@@ -18,7 +20,7 @@ The v0.8.1 pre-publish audit found three operational blockers that could have fa
 2. vLLM child processes inherited unrelated interactive and provider credentials;
 3. trusted remote model code did not receive the frozen model revision explicitly, and the downloaded reasoning-parser plugin was not re-hashed immediately before execution.
 
-v0.8.4 retains those launch, secret-isolation, and provenance repairs. It preserves v0.8.1's prompts, carriers, scoring, scientific gates, sample construction, model repositories, and generation configuration unchanged.
+v0.8.5 retains those launch, secret-isolation, provenance, ShellCheck, and container-runtime repairs. Apart from the explicit artifact-body contract documented above, it preserves v0.8.4's carriers, scoring, scientific gates, sample construction, model repositories, and generation configuration unchanged.
 
 ## The three gates
 
@@ -45,13 +47,13 @@ If any earlier gate fails, the program stops and packages partial evidence.
 Follow `docs/RUNPOD_SETUP.md`. On the Pod, the project is copied to:
 
 ```text
-/workspace/agent_worm_poc_v0.8.4
+/workspace/agent_worm_poc_v0.8.5
 ```
 
 From a Jupyter terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.4
+cd /workspace/agent_worm_poc_v0.8.5
 export RUNPOD_HOURLY_RATE_USD="<exact displayed total hourly rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -61,7 +63,7 @@ bash scripts/runpod/start_gated_run.sh
 Monitor from a second terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.4
+cd /workspace/agent_worm_poc_v0.8.5
 bash scripts/runpod/status.sh
 ```
 

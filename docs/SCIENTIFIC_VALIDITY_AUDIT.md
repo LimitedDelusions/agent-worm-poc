@@ -1,4 +1,4 @@
-# Scientific Validity Audit — v0.8.4
+# Scientific Validity Audit — v0.8.5
 
 ## Primary question
 
@@ -17,6 +17,7 @@
 - prohibited response reuse;
 - added blocked inference and paired defense analysis;
 - pinned the runtime container and added hard cost controls.
+- made the artifact-only handoff contract explicit after the valid v0.8.4 compatibility stop showed that Gemma populated dedicated JSON fields without retaining those facts in the transported body.
 
 ## Construct validity
 
