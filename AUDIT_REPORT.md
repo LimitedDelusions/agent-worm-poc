@@ -1,4 +1,4 @@
-# Full Scientific and Software Audit — v0.8.2
+# Full Scientific and Software Audit — v0.8.3
 
 ## Audit objective
 

@@ -6,7 +6,7 @@ Prove the source, tests, fake experiment, and container build before paid GPU us
 
 ## Steps
 
-1. Push the clean v0.8.2 source and tag to GitHub.
+1. Push the clean v0.8.3 source and tag to GitHub.
 2. Open **Actions**.
 3. Select **Validate and Build Agent Worm POC**.
 4. Select **Run workflow**.

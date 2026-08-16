@@ -1,4 +1,4 @@
-# Statistical Analysis Plan — v0.8.2
+# Statistical Analysis Plan — v0.8.3
 
 ## Primary population
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.8.2"
+VERSION="0.8.3"
 SOURCE_DIR="/opt/agent-worm-poc"
 PROJECT_DIR="/workspace/agent_worm_poc_v${VERSION}"
 TEMP_DIR="${PROJECT_DIR}.incoming"
@@ -37,11 +37,12 @@ export HF_HOME="${HF_HOME:-/workspace/hf-cache}"
 export PYTHONPATH="$PROJECT_DIR/src"
 export CONTAINER_IMAGE="${AGENT_WORM_IMAGE_REF:-unknown}"
 if [[ -f /opt/agent-worm-runtime.json ]]; then
-  export GIT_COMMIT="$(python - <<'PYCODE'
+  GIT_COMMIT="$(python - <<'PYCODE'
 import json
 print(json.load(open('/opt/agent-worm-runtime.json')).get('git_revision','unknown'))
 PYCODE
 )"
+  export GIT_COMMIT
 fi
 
 HASHED_PASSWORD=$(/opt/jupyter-venv/bin/python - <<'PYCODE'
