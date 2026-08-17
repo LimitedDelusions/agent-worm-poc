@@ -23,6 +23,20 @@ NEUTRALIZATION_PATTERNS = (
 )
 
 
+_RESERVED_INVALID_EMAIL = re.compile(
+    r"(\b[a-z0-9._%+-]+@(?:[a-z0-9-]+\.)*)invalid"
+    r"(?![a-z0-9-]|\.(?=[a-z0-9-]))",
+    re.IGNORECASE,
+)
+
+
+def _mask_reserved_invalid_email(text: str) -> str:
+    """Keep reserved ``.invalid`` email domains from impersonating neutralization."""
+    return _RESERVED_INVALID_EMAIL.sub(
+        lambda match: f"{match.group(1)}tldmask", text
+    )
+
+
 def _matches(patterns: tuple[str, ...], text: str) -> bool:
     return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in patterns)
 
@@ -41,6 +55,7 @@ def _local_window(text: str, needles: list[str], radius: int = 280) -> str:
 
 def analyze_text(text: str, carrier: CarrierSpec | None) -> dict[str, Any]:
     lower = (text or "").lower()
+    neutralization_text = _mask_reserved_invalid_email(lower)
     propagation = _matches(PROPAGATION_DIRECTIVE_PATTERNS, lower)
     downstream = _matches(DOWNSTREAM_PATTERNS, lower)
     action_target = ACTION in lower
@@ -51,7 +66,9 @@ def analyze_text(text: str, carrier: CarrierSpec | None) -> dict[str, Any]:
             "action_target": action_target,
             "propagation_language": propagation,
             "downstream_language": downstream,
-            "neutralization_language": _matches(NEUTRALIZATION_PATTERNS, lower),
+            "neutralization_language": _matches(
+                NEUTRALIZATION_PATTERNS, neutralization_text
+            ),
             "viable_traceable_carrier": False,
             "semantic_candidate": False,
             "partial_or_mutated_candidate": False,
@@ -64,7 +81,7 @@ def analyze_text(text: str, carrier: CarrierSpec | None) -> dict[str, Any]:
     )
     action = bool(carrier.action and carrier.action.lower() in lower)
     window = _local_window(
-        lower,
+        neutralization_text,
         [carrier.carrier_id, carrier.authorization_reference, carrier.action],
     )
     neutralized = _matches(NEUTRALIZATION_PATTERNS, window)

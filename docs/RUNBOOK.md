@@ -1,4 +1,4 @@
-# Complete v0.8.5 Runbook
+# Complete v0.8.6 Runbook
 
 This runbook is deliberately gated. Follow it in order and do not skip a gate.
 
@@ -7,8 +7,8 @@ This runbook is deliberately gated. Follow it in order and do not skip a gate.
 ### A1. Verify release integrity
 
 ```powershell
-Get-FileHash .\agent_worm_poc_v0.8.5.zip -Algorithm SHA256
-Get-Content .\agent_worm_poc_v0.8.5.zip.sha256
+Get-FileHash .\agent_worm_poc_v0.8.6.zip -Algorithm SHA256
+Get-Content .\agent_worm_poc_v0.8.6.zip.sha256
 ```
 
 **End goal:** the two SHA-256 values match.
@@ -19,9 +19,9 @@ Get-Content .\agent_worm_poc_v0.8.5.zip.sha256
 
 Follow `CODING_HANDOFF.md`. Do not overlay files on v0.7.0.
 
-**End goal:** one clean repository containing only v0.8.5 plus `.git`.
+**End goal:** one clean repository containing only v0.8.6 plus `.git`.
 
-**Artifacts:** commit SHA and tag `v0.8.5`.
+**Artifacts:** commit SHA and tag `v0.8.6`.
 
 ### A3. Run local/free tests
 
@@ -71,8 +71,9 @@ Use `docs/RUNPOD_SETUP.md` exactly.
 ```bash
 nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader
 df -h /workspace
-bash /opt/agent_worm_poc/scripts/runpod/status.sh
-python /opt/agent_worm_poc/scripts/validate_release.py
+cd /workspace/agent_worm_poc_v0.8.6
+python scripts/release/generate_integrity.py --check
+python scripts/validate_release.py
 ```
 
 **End goal:** release audit passes, GPU is idle, disk is adequate, no package installation is needed.
@@ -84,7 +85,9 @@ python /opt/agent_worm_poc/scripts/validate_release.py
 Start:
 
 ```bash
-bash /opt/agent_worm_poc/scripts/runpod/start_gated_run.sh
+cd /workspace/agent_worm_poc_v0.8.6
+export RUNPOD_HOURLY_RATE_USD="<displayed total hourly rate>"
+bash scripts/runpod/start_gated_run.sh
 ```
 
 ### D1. Compatibility gate
@@ -146,7 +149,7 @@ Ambiguous semantic candidates plus stratified exact positive/negative samples ar
 
 ### E1. Download evidence
 
-Download final ZIP and `.sha256` from `/workspace/agent_worm_outputs`.
+Download the final ZIP, `.zip.sha256`, and `.zip.json` from `/workspace/agent_worm_outputs`, plus `<run-dir>/RUN_STATUS.json`.
 
 ### E2. Verify locally
 
@@ -155,7 +158,7 @@ Get-FileHash .\agent-worm-results-*.zip -Algorithm SHA256
 Get-Content .\agent-worm-results-*.zip.sha256
 ```
 
-Open the ZIP and verify `PACKAGE_MANIFEST.json`.
+Open the ZIP and verify `evidence_package/PACKAGE_MANIFEST.json`.
 
 ### E3. Record actual cost
 
@@ -168,7 +171,7 @@ Terminate—not merely stop—the Pod after local evidence verification.
 If `/workspace` is a RunPod Network Volume, delete that volume separately after the Pod is terminated and the evidence is verified locally. Network-volume billing continues independently of Pod state.
 
 **Final end goal:** one complete, verified, locally stored evidence package and no continuing billing. The script cannot terminate the RunPod resource itself; the operator must terminate the Pod after verification.
-## Scientific design lock (v0.8.5)
+## Scientific design lock (v0.8.6)
 
 Review these before another paid run:
 

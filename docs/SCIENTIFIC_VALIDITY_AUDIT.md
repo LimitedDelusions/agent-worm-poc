@@ -1,4 +1,4 @@
-# Scientific Validity Audit — v0.8.5
+# Scientific Validity Audit — v0.8.6
 
 ## Primary question
 
@@ -18,6 +18,7 @@
 - added blocked inference and paired defense analysis;
 - pinned the runtime container and added hard cost controls.
 - made the artifact-only handoff contract explicit after the valid v0.8.4 compatibility stop showed that Gemma populated dedicated JSON fields without retaining those facts in the transported body.
+- excluded contact email addresses ending in the reserved `.invalid` TLD from neutralization matching after the v0.8.5 pilot exposed a deterministic scoring collision, while retaining genuine standalone neutralization terms.
 
 ## Construct validity
 

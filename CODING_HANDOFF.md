@@ -1,4 +1,4 @@
-# Coding Handoff — v0.8.5
+# Coding Handoff — v0.8.6
 
 ## Objective
 
@@ -9,17 +9,17 @@ Publish one immutable, tested container before another paid RunPod session. Do n
 PowerShell:
 
 ```powershell
-Get-FileHash .\agent_worm_poc_v0.8.5.zip -Algorithm SHA256
-Get-Content .\agent_worm_poc_v0.8.5.zip.sha256
-Expand-Archive .\agent_worm_poc_v0.8.5.zip .\agent-worm-poc-v085
-Set-Location .\agent-worm-poc-v085\agent_worm_poc_v0.8.5
+Get-FileHash .\agent_worm_poc_v0.8.6.zip -Algorithm SHA256
+Get-Content .\agent_worm_poc_v0.8.6.zip.sha256
+Expand-Archive .\agent_worm_poc_v0.8.6.zip .\agent-worm-poc-v086
+Set-Location .\agent-worm-poc-v086\agent_worm_poc_v0.8.6
 ```
 
 The two hashes must match.
 
 ## 2. Replace the repository cleanly
 
-Do not extract over an older source tree. Preserve only `.git`, then copy v0.8.5 into the repository root.
+Do not extract over an older source tree. Preserve only `.git`, then copy v0.8.6 into the repository root.
 
 ## 3. Run free validation
 
@@ -49,20 +49,20 @@ Expected results:
 
 ```powershell
 git add -A
-git commit -m "Agent worm POC v0.8.5 explicit artifact-body utility contract"
-git tag v0.8.5
+git commit -m "Agent worm POC v0.8.6 reserved-TLD scoring correction"
+git tag v0.8.6
 git push origin HEAD
-git push origin v0.8.5
+git push origin v0.8.6
 ```
 
 ## 5. Build the container
 
 1. Start exactly one run against the immutable tag:
    ```powershell
-   gh workflow run validate-and-build.yml --ref v0.8.5
+   gh workflow run validate-and-build.yml --ref v0.8.6
    ```
 2. Open GitHub → **Actions** and select **Validate and Build Agent Worm POC**.
-3. Select the run for `v0.8.5`; do not dispatch a duplicate while it is active.
+3. Select the run for `v0.8.6`; do not dispatch a duplicate while it is active.
 4. Confirm `validate` is green.
 5. Confirm `build` is green.
 6. Download artifact `agent-worm-poc-container-reference`.

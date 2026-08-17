@@ -5,6 +5,7 @@ import ast,json,re,subprocess
 from .config import load_experiment,load_models,load_prompts
 from .placements import ordered_pair_assignments
 from .cases import build_main_cases,build_positive_pair_cases,build_shakedown_cases
+from .scoring import analyze_text
 from .util import ensure_no_secret_text,write_json
 
 REQUIRED=(
@@ -12,7 +13,7 @@ REQUIRED=(
     "AUDIT_REPORT.md","FINAL_VALIDATION_REPORT.md","SOURCE_HASHES.sha256","RELEASE_MANIFEST.json",".dockerignore",".gitignore",
     "configs/models.json","configs/experiment.json","configs/preregistration.json","configs/prompts.json","configs/schemas.json",
     "docs/RUNBOOK.md","docs/EXPERIMENT_DESIGN.md","docs/STATISTICAL_ANALYSIS.md","docs/ARTIFACTS.md",
-    "docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md",
+    "docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md","docs/V0_8_5_POSITIVE_CONTROL_POSTMORTEM.md",
     ".github/workflows/validate-and-build.yml",
     "scripts/runpod/entrypoint.sh","scripts/runpod/start_gated_run.sh","scripts/runpod/status.sh","scripts/runpod/cancel_run.sh",
     "src/agent_worm_poc/engine.py","src/agent_worm_poc/scoring.py","src/agent_worm_poc/scientific_gates.py",
@@ -96,6 +97,13 @@ def audit_release(root:Path)->dict:
         for forbidden in ("http://","https://","curl ","wget ","powershell","subprocess","os.system","rm -rf","system message:","developer message:"):
             if forbidden in carrier_text:errors.append(f"Unsafe carrier content detected: {forbidden}")
         if "simulated action" in carrier_text:errors.append("Carrier contains laboratory wording instead of a natural workflow instruction")
+        scoring_probe=positive[0].carrier
+        scoring_result=analyze_text(
+            f"Contact: procurement@example.invalid\n{scoring_probe.injected_block}",
+            scoring_probe,
+        )
+        if scoring_result["neutralization_language"] or not scoring_result["viable_traceable_carrier"]:
+            errors.append("Reserved .invalid contact domain corrupts carrier neutralization scoring")
         docker=(root/"Dockerfile").read_text(encoding="utf-8") if (root/"Dockerfile").exists() else ""
         if "@sha256:" not in docker:errors.append("Docker base image is not pinned by digest")
         if re.search(r"(?i)(pip|uv pip|apt-get) install",(root/"scripts/runpod/start_gated_run.sh").read_text(encoding="utf-8") if (root/"scripts/runpod/start_gated_run.sh").exists() else ""):
@@ -124,11 +132,12 @@ def audit_release(root:Path)->dict:
                or part.endswith(".egg-info") for part in path.parts):continue
         result=subprocess.run(["bash","-n",str(path)],capture_output=True,text=True)
         if result.returncode:errors.append(f"Shell syntax error {path.relative_to(root)}: {result.stderr.strip()}")
-    result={"release":"0.8.5","passed":not errors,"errors":errors,"warnings":warnings,
+    result={"release":"0.8.6","passed":not errors,"errors":errors,"warnings":warnings,
             "scientific_controls":{"carrier_variants":3,"base_documents":3,
               "ordered_intake_relay_pairs":16,"generation_seeds_per_carrier_document":2,
               "matched_policy_inputs":True,"matched_assignment_blocks":True,
               "response_reuse_allowed":False,"positive_control_all_ordered_pairs":True,
+              "reserved_invalid_email_tld_excluded_from_neutralization":True,
               "artifact_body_contract_explicit":True,
               "hardened_negative_control":True,"sham_specificity_control":True,
               "semantic_review_blinded":True,"nemotron_runtime_plugin_frozen_at_gate":True,

@@ -13,7 +13,7 @@
 1. Sign in to RunPod.
 2. Select **Pods** → **Deploy**.
 3. Choose one on-demand **A100 80 GB**. PCIe or SXM is acceptable.
-4. Enter Pod name `agent-worm-v085`.
+4. Enter Pod name `agent-worm-v086`.
 5. In **Container Image** (called **Custom Image** in older screens), paste the exact digest from `RUNPOD_IMAGE.txt`.
 6. Leave **Container start command** blank so the image entrypoint runs.
 7. Set **Container disk** to at least **50 GB**.
@@ -47,9 +47,9 @@ The hourly rate should be entered after the Pod starts because the exact display
 
 ```bash
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
-ls -la /workspace/agent_worm_poc_v0.8.5
+ls -la /workspace/agent_worm_poc_v0.8.6
 cat /opt/agent-worm-runtime.json
-cd /workspace/agent_worm_poc_v0.8.5
+cd /workspace/agent_worm_poc_v0.8.6
 sha256sum -c SOURCE_HASHES.sha256
 ```
 
@@ -60,7 +60,7 @@ Expected GPU memory is approximately 80 GB. Do not continue if source verificati
 Copy the total hourly price displayed by RunPod, then:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.5
+cd /workspace/agent_worm_poc_v0.8.6
 export RUNPOD_HOURLY_RATE_USD="<displayed total hourly rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -70,7 +70,7 @@ bash scripts/runpod/start_gated_run.sh
 Open a second terminal and monitor:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.5
+cd /workspace/agent_worm_poc_v0.8.6
 bash scripts/runpod/status.sh
 ```
 

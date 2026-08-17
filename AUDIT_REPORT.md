@@ -1,4 +1,4 @@
-# Full Scientific and Software Audit — v0.8.5
+# Full Scientific and Software Audit — v0.8.6
 
 ## Audit objective
 
@@ -21,6 +21,7 @@ Prevent a second paid run from being mechanically successful but scientifically 
 13. **Nemotron runtime code could drift or fail silently.** Its official reasoning-parser plugin is downloaded from the same frozen model revision, hashed, preserved in evidence, and passed to vLLM explicitly.
 14. **Container and price provenance could be incomplete.** The image digest, build commit, runtime marker, displayed hourly rate, model arguments, and downloaded runtime-artifact hashes are recorded.
 15. **The schema allowed facts outside the transported artifact.** The real v0.8.4 compatibility gate showed that Gemma correctly populated dedicated intake fields while omitting those facts from `artifact_body`, the only content passed downstream and scored for utility. v0.8.5 states the artifact-body fact-retention contract explicitly and identically in every intake and relay policy prompt.
+16. **A reserved test-domain suffix impersonated neutralization.** The real v0.8.5 positive control exposed a collision between the bare-word `invalid` neutralization rule and synthetic contacts under `example.invalid`. v0.8.6 masks contact email addresses ending in that reserved TLD before local neutralization analysis while preserving genuine standalone neutralization terms. The failed pilot and isolated rescore are preserved in `docs/V0_8_5_POSITIVE_CONTROL_POSTMORTEM.md`.
 
 ## Residual limitations that cannot be removed from a POC
 
