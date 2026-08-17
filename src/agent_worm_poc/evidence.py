@@ -1,6 +1,10 @@
 from __future__ import annotations
 from pathlib import Path
-import json,shutil,zipfile
+import json
+import os
+import shutil
+import stat
+import zipfile
 from .util import sha256_file,write_json,utc_stamp
 
 
@@ -12,9 +16,15 @@ def build_manifest(root:Path,exclude_names:set[str]|None=None)->dict:
     return {'created_utc':utc_stamp(),'file_count':len(files),'files':files}
 
 
+def _remove_readonly(func,path,_exc_info)->None:
+    """Allow a verified evidence bundle to be rebuilt on Windows."""
+    os.chmod(path,stat.S_IWRITE)
+    func(path)
+
+
 def package_results(project_root:Path,run_dir:Path,output_path:Path)->dict:
     package_root=run_dir/'evidence_package'
-    if package_root.exists():shutil.rmtree(package_root)
+    if package_root.exists():shutil.rmtree(package_root,onerror=_remove_readonly)
     package_root.mkdir(parents=True)
     shutil.copytree(run_dir,package_root/'run',dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns('evidence_package','*.zip','*.pyc','__pycache__'))

@@ -12,10 +12,21 @@ from .util import extract_json_object
 @dataclass
 class Completion:
     raw_text: str
-    parsed: dict[str, Any]
+    parsed: dict[str, Any] | None
     latency_seconds: float
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
+    transport_attempts: int = 1
+    transport_retry_errors: tuple[str, ...] = ()
+
+
+class CompletionTransportFailure(RuntimeError):
+    """A terminal completion failure with sanitized per-attempt telemetry."""
+
+    def __init__(self, message: str, attempts: int, errors: tuple[str, ...]):
+        super().__init__(message)
+        self.transport_attempts = attempts
+        self.transport_retry_errors = errors
 
 
 class Adapter(Protocol):
@@ -72,9 +83,10 @@ class OpenAICompatibleAdapter:
         }
         payload.update(model.request_extra or {})
         headers = {"Authorization": f"Bearer {self.api_key}"}
-        last = None
+        retry_errors: list[str] = []
+        overall_started = time.monotonic()
+        response = None
         for attempt in range(self.retries + 1):
-            started = time.monotonic()
             try:
                 with httpx.Client(timeout=self.timeout) as client:
                     response = client.post(
@@ -82,25 +94,57 @@ class OpenAICompatibleAdapter:
                         json=payload,
                         headers=headers,
                     )
-                    response.raise_for_status()
-                    data = response.json()
-                message = data["choices"][0]["message"]
-                text = message.get("content") or ""
-                parsed = extract_json_object(text)
-                usage = data.get("usage") or {}
-                return Completion(
-                    text,
-                    parsed,
-                    time.monotonic() - started,
-                    usage.get("prompt_tokens"),
-                    usage.get("completion_tokens"),
-                )
-            except Exception as exc:
-                last = exc
+            except httpx.TransportError as exc:
+                failure = type(exc).__name__
                 if attempt >= self.retries:
-                    raise
+                    errors = tuple([*retry_errors, failure])
+                    raise CompletionTransportFailure(
+                        f"Completion failed after {attempt + 1} attempt(s): {failure}",
+                        attempt + 1,
+                        errors,
+                    ) from exc
+                retry_errors.append(failure)
                 time.sleep(2)
-        raise RuntimeError(str(last))
+                continue
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                failure = f"HTTPStatusError HTTP {status}"
+                transient = status in {408, 425, 429, 500, 502, 503, 504}
+                if transient and attempt < self.retries:
+                    retry_errors.append(failure)
+                    time.sleep(2)
+                    continue
+                errors = tuple([*retry_errors, failure])
+                raise CompletionTransportFailure(
+                    f"Completion failed after {attempt + 1} attempt(s): {failure}",
+                    attempt + 1,
+                    errors,
+                ) from exc
+            break
+        if response is None:
+            raise AssertionError("unreachable completion retry state")
+        attempts=len(retry_errors)+1
+        raw_http=getattr(response,"text","") or ""
+        try:
+            data=response.json()
+            message=data["choices"][0]["message"]
+            text=message.get("content") or ""
+            usage=data.get("usage") or {}
+        except Exception:
+            text=raw_http;data={};usage={}
+        try:parsed=extract_json_object(text)
+        except Exception:parsed=None
+        return Completion(
+            text,
+            parsed,
+            time.monotonic()-overall_started,
+            usage.get("prompt_tokens"),
+            usage.get("completion_tokens"),
+            attempts,
+            tuple(retry_errors),
+        )
 
 
 class FakeAdapter:

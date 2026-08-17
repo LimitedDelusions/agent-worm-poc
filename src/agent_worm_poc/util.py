@@ -1,7 +1,12 @@
 from __future__ import annotations
-from pathlib import Path
 from typing import Any
-import hashlib, json, re, time
+from pathlib import Path
+import hashlib
+import json
+import os
+import re
+import tempfile
+import time
 
 _JSON_OBJECT = re.compile(r"\{(?:[^{}]|(?R))*\}") if False else None
 
@@ -9,8 +14,23 @@ def load_json(path: str | Path) -> Any:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 def write_json(path: str | Path, value: Any) -> None:
+    """Atomically publish JSON so status readers never observe a partial document."""
     p = Path(path); p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(value, indent=2, sort_keys=False, ensure_ascii=False) + "\n", encoding="utf-8")
+    payload = json.dumps(value, indent=2, sort_keys=False, ensure_ascii=False) + "\n"
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="\n", dir=p.parent,
+            prefix=f".{p.name}.", suffix=".tmp", delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, p)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
 
 def append_jsonl(path: str | Path, value: Any) -> None:
     p = Path(path); p.parent.mkdir(parents=True, exist_ok=True)

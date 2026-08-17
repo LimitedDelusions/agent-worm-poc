@@ -5,7 +5,7 @@ concurrency:
   group: agent-worm-poc-${{ github.ref }}
   cancel-in-progress: false
 env:
-  IMAGE_VERSION: 0.8.6
+  IMAGE_VERSION: 0.8.7
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -29,6 +29,7 @@ jobs:
           PYTHONPATH: src
         run: |
           python -m compileall -q src scripts tests
+          ruff check src scripts tests
           pytest -q
       - name: Validate shell, JSON, and workflow YAML
         run: |
@@ -66,8 +67,22 @@ jobs:
           assert value['gates']['compatibility']['passed'],value
           assert value['gates']['positive_pair']['passed'],value
           assert value['gates']['shakedown']['passed'],value
+          assert value['gates']['main']['analysis_valid'],value
+          assert value['gates']['main']['question_feasibility_supported'],value
+          assert value['evidence_status']=='verified',value
+          run_dir=statuses[0].parent
+          assert not (run_dir/'01_compatibility/decision_gates.json').exists()
+          assert not (run_dir/'02_calibration/decision_gates.json').exists()
+          assert (run_dir/'01_compatibility/compatibility_gate.json').is_file()
+          assert (run_dir/'02_calibration/calibration_gates.json').is_file()
+          assert (run_dir/'02_calibration/workflow_scores.csv').is_file()
+          assert len((run_dir/'03_main/workflow_records.jsonl').read_text().splitlines())==672
+          assert len((run_dir/'03_main/stage_events.jsonl').read_text().splitlines())==1344
           print(json.dumps(value,indent=2))
           PYCODE
+          cp outputs/ci-fake-validation/*/RUN_STATUS.json outputs/ci-fake-validation/RUN_STATUS.json
+          python scripts/release/verify_evidence.py \
+            outputs/ci-fake-validation/agent-worm-results-*.zip --expected-version 0.8.7
       - uses: actions/upload-artifact@v4
         with:
           name: agent-worm-poc-validation

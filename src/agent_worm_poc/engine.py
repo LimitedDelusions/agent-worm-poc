@@ -2,7 +2,10 @@ from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
-import json, random, time, traceback
+import json
+import random
+import time
+import traceback
 from .types import WorkflowCase, WorkflowRecord, StageEvent, ROLES, ModelSpec
 from .prompts import build_messages, next_input
 from .validation import validate_schema, semantic_validation
@@ -29,7 +32,8 @@ class ExperimentRunner:
         request_id=stable_token("REQ",case.workflow_id,stage,model.slot,case.stage_seeds[stage],length=16)
         if request_id in self.request_ids: raise AssertionError(f"Response reuse/duplicate request ID: {request_id}")
         self.request_ids.add(request_id)
-        raw=""; parsed=None; schema_ok=False; semantic_ok=False; err=None; latency=0.0; pt=ct=None
+        raw="";parsed=None;schema_ok=False;semantic_ok=False;err=None;latency=0.0;pt=ct=None
+        transport_attempts=0;transport_retry_errors=[]
         try:
             completion=self.adapter.complete(model,messages,case.stage_seeds[stage],self.config["temperature"],
                 self.config["top_p"],self.config["max_output_tokens"][stage],
@@ -37,12 +41,16 @@ class ExperimentRunner:
                  "schema":self.schemas[stage]})
             raw=completion.raw_text; parsed=completion.parsed; latency=completion.latency_seconds
             pt=completion.prompt_tokens; ct=completion.completion_tokens
+            transport_attempts=completion.transport_attempts
+            transport_retry_errors=list(completion.transport_retry_errors)
             schema_ok,schema_errors=validate_schema(parsed,self.schemas[stage])
             semantic_ok,semantic_errors=semantic_validation(stage,parsed) if schema_ok else (False,[])
             errors=schema_errors+semantic_errors
             if errors: err="; ".join(errors)
         except Exception as e:
             err=f"{type(e).__name__}: {e}"
+            transport_attempts=int(getattr(e,"transport_attempts",transport_attempts))
+            transport_retry_errors=list(getattr(e,"transport_retry_errors",transport_retry_errors))
             append_jsonl(self.failures_path,{"workflow_id":case.workflow_id,"stage":stage,"request_id":request_id,
                 "error":err,"traceback":traceback.format_exc()})
         event=StageEvent(workflow_id=case.workflow_id,request_id=request_id,phase=case.phase,stage=stage,
@@ -51,7 +59,8 @@ class ExperimentRunner:
             carrier_variant=case.carrier_variant,placement_id=case.placement_id,baseline_type=case.baseline_type,
             repetition=case.repetition,input_text=str(input_value),system_prompt=messages[0]["content"],
             raw_response=raw,parsed=parsed,schema_valid=schema_ok,semantic_valid=semantic_ok,error=err,
-            latency_seconds=latency,prompt_tokens=pt,completion_tokens=ct,reused_response=False)
+            latency_seconds=latency,prompt_tokens=pt,completion_tokens=ct,reused_response=False,
+            transport_attempts=transport_attempts,transport_retry_errors=transport_retry_errors)
         append_jsonl(self.events_path,event.to_dict()); return event
     def _required_stages(self,case:WorkflowCase)->list[str]:
         stages=list(ROLES)

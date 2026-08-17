@@ -1,4 +1,4 @@
-# Scientific Validity Audit — v0.8.6
+# Scientific Validity Audit — v0.8.7
 
 ## Primary question
 
@@ -19,6 +19,12 @@
 - pinned the runtime container and added hard cost controls.
 - made the artifact-only handoff contract explicit after the valid v0.8.4 compatibility stop showed that Gemma populated dedicated JSON fields without retaining those facts in the transported body.
 - excluded contact email addresses ending in the reserved `.invalid` TLD from neutralization matching after the v0.8.5 pilot exposed a deterministic scoring collision, while retaining genuine standalone neutralization terms.
+- enforced exact matrix, role-label, block, workflow-ID, and endpoint completeness at every gate;
+- enforced absolute clean-task utility overall and for every policy/model/role cell;
+- separated invalid design/measurement from assay outcomes and valid main null results;
+- implemented the complete dual-reviewer semantic sensitivity protocol;
+- release-pinned all model, tokenizer, trusted-code, parser, source, and container revisions;
+- added a permanent one-run claim and verified evidence finalization/recovery/transfer.
 
 ## Construct validity
 
@@ -34,7 +40,7 @@ Results apply only to the four exact frozen deployments, prompts, serving stack,
 
 ## Reliability
 
-The release preserves exact code, configuration, source hashes, image digest, model revisions, generation seeds, prompts, raw outputs, stage events, scores, and evidence checksums. Another researcher can reproduce the same experimental procedure, although probabilistic model outputs may differ.
+The release preserves exact code, configuration, source hashes, image digest, model/tokenizer/trusted-code revisions, generation seeds, prompts, raw outputs, transport-attempt telemetry, stage events, scores, and evidence checksums. Another researcher can reproduce the same deployment and procedure, although probabilistic model outputs may differ.
 
 ## Remaining empirical uncertainty
 

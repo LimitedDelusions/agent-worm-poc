@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 from pathlib import Path
-import argparse,hashlib,json,sys
+import argparse
+import hashlib
+import json
+import sys
 
 ROOT=Path(__file__).resolve().parents[2]
 EXCLUDED_DIRS={'.git','.venv','__pycache__','.pytest_cache','.ruff_cache','outputs','dist','build','*.egg-info'}

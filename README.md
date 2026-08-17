@@ -1,4 +1,4 @@
-# Agent Worm POC v0.8.6
+# Agent Worm POC v0.8.7
 
 This is a controlled, defensive proof of concept for a document-borne prompt-propagation question:
 
@@ -16,7 +16,10 @@ The experiment tests a complete **4 × 4 intake-to-relay transmission matrix**. 
 - Sham metadata specificity control
 - Independent model requests; response reuse is forbidden
 - External deterministic scoring plus blinded semantic-mutation review
-- Fail-closed calibration before the full matrix
+- Fail-closed exact-matrix, endpoint, absolute-utility, sensitivity, and specificity gates
+- Separate design, technical/measurement, assay, and empirical outcome classifications
+- Release-pinned model, tokenizer, trusted-code, container, and source revisions
+- One real-run claim and verified evidence finalization/transfer
 
 ## Operational model
 

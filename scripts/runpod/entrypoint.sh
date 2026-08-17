@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-VERSION="0.8.6"
+VERSION="0.8.7"
 SOURCE_DIR="/opt/agent-worm-poc"
 PROJECT_DIR="/workspace/agent_worm_poc_v${VERSION}"
 TEMP_DIR="${PROJECT_DIR}.incoming"
@@ -35,7 +35,6 @@ export AGENT_WORM_PROJECT_ROOT="$PROJECT_DIR"
 export AGENT_WORM_WORKSPACE="/workspace"
 export HF_HOME="${HF_HOME:-/workspace/hf-cache}"
 export PYTHONPATH="$PROJECT_DIR/src"
-export CONTAINER_IMAGE="${AGENT_WORM_IMAGE_REF:-unknown}"
 if [[ -f /opt/agent-worm-runtime.json ]]; then
   GIT_COMMIT="$(python - <<'PYCODE'
 import json

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import json,subprocess,sys
+import json
+import subprocess
+import sys
 from agent_worm_poc.release_audit import audit_release
 root=Path(__file__).resolve().parents[1]
 result=audit_release(root)

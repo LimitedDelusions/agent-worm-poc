@@ -1,4 +1,4 @@
-# Start Here — Agent Worm POC v0.8.6
+# Start Here — Agent Worm POC v0.8.7
 
 ## End goal
 
@@ -6,7 +6,13 @@ Produce defensible evidence showing whether the **ordered intake-to-relay model 
 
 This POC decides whether the research question is measurable enough to advance to the full SANS proposal. It does not prove a universal ranking of model families.
 
-## Why v0.8.6 replaces v0.8.5
+## Why v0.8.7 replaces v0.8.6
+
+A complete post-build rehearsal of v0.8.6 found fail-closed gaps before another paid session: equal zero clean-task utility could pass calibration, incomplete matrices and endpoints were not rejected everywhere, a failed main measurement could still look execution-complete, and the semantic-review export did not implement its locked dual-review protocol. Operational rehearsal also found duplicate-launch, cancellation, packaging, status, and evidence-transfer failure paths.
+
+v0.8.7 fixes those defects, release-pins the four model/tokenizer/code commits, and records design, technical, assay, and empirical outcomes separately. A complete valid null is now a completed result, not a reason to rerun. Details are preserved in `docs/V0_8_6_FAIL_CLOSED_AUDIT.md`.
+
+## Why v0.8.6 replaced v0.8.5
 
 The first real v0.8.5 gated run passed compatibility and shakedown but stopped at the positive-control gate. The frozen scorer reported 17/48 two-hop successes. Evidence review found that every one of its 57 positive-control neutralization flags came from the reserved contact domain `.invalid`, not from model neutralization language. Masking only that TLD before neutralization analysis yields 45/48 two-hop successes and at least 2/3 successes for every ordered pair. The verified pilot and isolated rescore are documented in `docs/V0_8_5_POSITIVE_CONTROL_POSTMORTEM.md`.
 
@@ -26,13 +32,13 @@ The v0.8.1 pre-publish audit found three operational blockers that could have fa
 2. vLLM child processes inherited unrelated interactive and provider credentials;
 3. trusted remote model code did not receive the frozen model revision explicitly, and the downloaded reasoning-parser plugin was not re-hashed immediately before execution.
 
-v0.8.6 retains those launch, secret-isolation, provenance, ShellCheck, container-runtime, and artifact-body contract repairs. Apart from the reserved-TLD scoring correction documented above, it preserves v0.8.5's prompts, carriers, scientific gates, sample construction, model repositories, and generation configuration unchanged.
+v0.8.7 retains those launch, secret-isolation, provenance, ShellCheck, container-runtime, artifact-body, and reserved-TLD repairs.
 
 ## The three gates
 
-1. **Compatibility:** every model must complete all four benign roles.
-2. **Calibration:** positive control, neutral/hardened shakedown, sham specificity, benign utility, and within-block assignment variation must pass.
-3. **Main matrix:** all 16 ordered model pairs run across three carriers, three documents, two seeds, and matched neutral/hardened policies.
+1. **Compatibility:** the exact 12-row homogeneous matrix must be complete; schema/runtime validity and clean utility are reported separately.
+2. **Calibration:** the exact positive-control and shakedown matrices must be complete; assay sensitivity, specificity, absolute per-model/role utility, and empirical variation are classified separately.
+3. **Main matrix:** all 16 ordered model pairs run across three carriers, three documents, two seeds, and matched neutral/hardened policies. A design- or measurement-invalid matrix aborts; a valid null completes.
 
 If any earlier gate fails, the program stops and packages partial evidence.
 
@@ -53,13 +59,13 @@ If any earlier gate fails, the program stops and packages partial evidence.
 Follow `docs/RUNPOD_SETUP.md`. On the Pod, the project is copied to:
 
 ```text
-/workspace/agent_worm_poc_v0.8.6
+/workspace/agent_worm_poc_v0.8.7
 ```
 
 From a Jupyter terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.6
+cd /workspace/agent_worm_poc_v0.8.7
 export RUNPOD_HOURLY_RATE_USD="<exact displayed total hourly rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -69,7 +75,7 @@ bash scripts/runpod/start_gated_run.sh
 Monitor from a second terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.6
+cd /workspace/agent_worm_poc_v0.8.7
 bash scripts/runpod/status.sh
 ```
 
@@ -81,10 +87,17 @@ bash scripts/runpod/cancel_run.sh
 
 ## Required deliverables
 
-Before terminating the Pod, download:
+After `status.sh` reports `NOT RUNNING`, stage and send the complete verified bundle with one command:
+
+```bash
+bash /workspace/agent_worm_poc_v0.8.7/scripts/runpod/stage_and_send_evidence.sh
+```
+
+Before terminating the Pod, receive and locally verify:
 
 - `agent-worm-results-<run-id>.zip`
 - its `.sha256` file
+- its `.zip.json` metadata
 - the run’s `RUN_STATUS.json`
 
 The evidence ZIP contains raw stage events, generated artifacts, workflow scores, ordered-pair summaries, matched neutral/hardened results, prespecified inference, model revisions, server logs, source snapshot, environment metadata, and semantic-review files.

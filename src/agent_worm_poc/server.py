@@ -12,6 +12,13 @@ from .util import sha256_file
 
 _CREDENTIAL_MARKERS=("PASSWORD","TOKEN","SECRET","API_KEY","PRIVATE_KEY","CREDENTIAL")
 _MODEL_SERVER_CREDENTIAL_ALLOWLIST={"HF_TOKEN"}
+_MODEL_SERVER_ENV_ALLOWLIST={
+    "HOME","USER","LOGNAME","PATH","SHELL","LANG","LC_ALL","TZ","TMPDIR",
+    "LD_LIBRARY_PATH","LIBRARY_PATH","CUDA_HOME","CUDA_PATH",
+    "HF_HOME","HF_HUB_CACHE","XDG_CACHE_HOME","TORCH_HOME","TRITON_CACHE_DIR",
+    "PYTHONUNBUFFERED","PYTHONDONTWRITEBYTECODE","PYTHONHASHSEED",
+}
+_MODEL_SERVER_ENV_PREFIXES=("CUDA_","NVIDIA_","VLLM_","NCCL_","TORCH_","TRITON_","OMP_","MKL_")
 
 
 def _model_server_environment()->dict[str,str]:
@@ -21,7 +28,11 @@ def _model_server_environment()->dict[str,str]:
         if upper not in _MODEL_SERVER_CREDENTIAL_ALLOWLIST and any(
                 marker in upper for marker in _CREDENTIAL_MARKERS):
             continue
-        environment[name]=value
+        if upper in _MODEL_SERVER_CREDENTIAL_ALLOWLIST or upper in _MODEL_SERVER_ENV_ALLOWLIST \
+                or upper.startswith(_MODEL_SERVER_ENV_PREFIXES):
+            environment[name]=value
+    if not environment.get("HF_TOKEN"):
+        raise RuntimeError("HF_TOKEN is required by the isolated model-server environment")
     environment.setdefault("HF_HOME","/workspace/hf-cache")
     environment["CUDA_VISIBLE_DEVICES"]="0"
     return environment
@@ -73,13 +84,16 @@ class VLLMServerManager:
                 text=True,
                 timeout=20,
             )
-            return max(int(value.strip()) for value in output.splitlines() if value.strip())
-        except Exception:
-            return -1
+            values = [int(value.strip()) for value in output.splitlines() if value.strip()]
+            if not values:
+                raise ValueError("nvidia-smi returned no GPU memory rows")
+            return max(values)
+        except Exception as exc:
+            raise RuntimeError("Could not query GPU memory with nvidia-smi") from exc
 
     def ensure_idle(self):
         used = self._gpu_memory()
-        if used >= 0 and used > self.idle_memory_mib_max:
+        if used > self.idle_memory_mib_max:
             raise RuntimeError(f"GPU is not idle before model load: {used} MiB used")
 
     def start(self, model: ModelSpec):
@@ -125,7 +139,10 @@ class VLLMServerManager:
             "--disable-log-stats",
         ] + list(model.server_args)
         environment = _model_server_environment()
-        self.log_handle.write("COMMAND: " + json.dumps(command) + "\n")
+        logged_command=list(command)
+        if "--api-key" in logged_command:
+            logged_command[logged_command.index("--api-key")+1]="<redacted>"
+        self.log_handle.write("COMMAND: " + json.dumps(logged_command) + "\n")
         self.log_handle.flush()
         self.process = subprocess.Popen(
             command,
@@ -194,7 +211,7 @@ class VLLMServerManager:
         deadline = time.monotonic() + 180
         while time.monotonic() < deadline:
             used = self._gpu_memory()
-            if used < 0 or used <= self.idle_memory_mib_max:
+            if used <= self.idle_memory_mib_max:
                 return
             time.sleep(5)
         raise RuntimeError(

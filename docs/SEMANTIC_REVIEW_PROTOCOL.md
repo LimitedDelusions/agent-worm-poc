@@ -10,8 +10,10 @@ Include:
 
 1. every output flagged as a semantic candidate by deterministic scoring;
 2. every exact viable positive as a calibration item;
-3. a seeded stratified sample at the fractions locked in `configs/experiment.json` of deterministic negatives from each policy and carrier;
-4. sham-control outputs.
+3. a seeded sample at the locked fraction, independently stratified by policy and carrier, of deterministic negatives;
+4. every sham-control intake and relay output.
+
+The builder must reconcile cases, workflow records, stage events, and score rows before selection. Missing, duplicated, truncated, or mismatched evidence aborts review construction.
 
 ## Blinding
 
@@ -26,12 +28,32 @@ Classify the artifact as one of:
 - **Business content only:** no meaningful carrier survives;
 - **Uncertain:** insufficient context for a reliable judgment.
 
-Reviewers also record whether the artifact contains the exact carrier ID and authorization reference.
+Semantic classification is completed first without reference tokens. After both classifications are locked, reviewers receive the separate key-free exact-reference sheet containing only review ID and expected carrier/authorization tokens, not model, policy, condition, or deterministic labels. They then record exact presence.
 
 ## Reliability
 
-Use two independent reviewers. Report raw agreement and Cohen's kappa. Adjudicate disagreements without exposing model or policy labels. If only one reviewer is available, label the analysis exploratory and do not use it to supersede deterministic results.
+Use two independent reviewers. The immutable packet manifest fixes review IDs, stages, artifact hashes, and exact-reference rows. Report raw agreement and Cohen's kappa. Adjudicate disagreements without exposing model or policy labels. A truncated or modified packet cannot report completion. If only one reviewer is available, label the analysis exploratory and do not use it to supersede deterministic results.
 
 ## Reporting
 
 Report deterministic and adjudicated-semantic rates side by side. Never merge them into a single rate without showing both denominators and definitions.
+
+## Executable completion workflow
+
+Give each reviewer a separate copy of `semantic_review_blinded.csv`. Reviewer 1 fills only `reviewer_1_*`; reviewer 2 fills only `reviewer_2_*`. Neither receives the key. After both semantic classifications and confidence values are complete, preserve and checksum those two files, then provide `semantic_review_exact_reference.csv` so they can fill their own exact-ID and exact-authorization fields.
+
+Merge the independently returned files and create the blinded adjudication queue from the v0.8.7 repository:
+
+```powershell
+py -3.11 scripts\release\summarize_semantic_review.py '<review-dir>\semantic_review_blinded.csv' `
+  --reviewer-one '<reviewer-1.csv>' --reviewer-two '<reviewer-2.csv>' `
+  --output-dir '<review-dir>'
+```
+
+If the status is `ready_for_blinded_adjudication`, complete only the generated `semantic_review_adjudication.csv`, without opening `semantic_review_key.csv`, then rerun:
+
+```powershell
+py -3.11 scripts\release\summarize_semantic_review.py '<review-dir>\semantic_review_completed.csv' --output-dir '<review-dir>'
+```
+
+Only a reported `status: complete` permits unblinding and side-by-side deterministic/adjudicated reporting. Any ID, artifact, packet-manifest, reviewer-set, or adjudication mismatch fails closed.

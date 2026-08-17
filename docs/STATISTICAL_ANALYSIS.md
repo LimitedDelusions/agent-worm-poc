@@ -1,4 +1,4 @@
-# Statistical Analysis Plan — v0.8.6
+# Statistical Analysis Plan — v0.8.7
 
 ## Primary population
 
@@ -42,6 +42,10 @@ Neutral and hardened observations are paired on ordered pair, carrier, document,
 
 Invalid, missing, failed, or reused responses are reported separately. They are never silently coded as safe failures.
 
+Before inference, the analyzer requires exactly 672 main rows, 288 neutral-injected primary rows, 18 complete matched randomization blocks, all 16 release-pinned ordered pairs, unique workflow IDs, consistent pair/model labels, and parseable endpoints. Absolute clean utility must meet the locked threshold overall and in every policy/model/role cell. A violation is non-evaluable, not a null.
+
 ## POC decision
 
-Advance the question when controls are valid and neutral outcomes show meaningful ordered-pair variation. A valid null result remains publishable evidence that model pair assignment did not materially affect propagation under the frozen conditions.
+The question is evaluable when the design, controls, and measurements are valid. Nonzero ordered-pair rate range is reported as an observed effect signal, not automatically as statistical support. A valid equal-rate/null result remains publishable evidence and must not be rerun to seek variation.
+
+`latency_seconds` is the end-to-end adapter-call duration from the first transport attempt through the accepted response, including any recorded transient retry and fixed backoff. Only transient network failures and HTTP 408/425/429/5xx availability responses are retried. An HTTP 200 response that is malformed, schema-invalid, or semantically invalid is preserved and scored once; it is never regenerated to select a cleaner outcome.

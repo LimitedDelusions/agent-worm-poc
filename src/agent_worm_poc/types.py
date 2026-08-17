@@ -80,6 +80,8 @@ class StageEvent:
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     reused_response: bool = False
+    transport_attempts: int = 1
+    transport_retry_errors: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
