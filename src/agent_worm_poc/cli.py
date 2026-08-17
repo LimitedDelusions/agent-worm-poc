@@ -106,10 +106,22 @@ def _prepare_run_dir(output_root:Path,run_id:str)->Path:
 
 def _atomic_write_json(path:Path,value:dict):
     path.parent.mkdir(parents=True,exist_ok=True)
-    temporary=path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    handle=tempfile.NamedTemporaryFile(
+        mode="w",encoding="utf-8",delete=False,dir=path.parent,
+        prefix=f".{path.name}.",suffix=".tmp",
+    )
+    temporary=Path(handle.name)
     try:
-        temporary.write_text(json.dumps(value,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
-        os.replace(temporary,path)
+        with handle:
+            handle.write(json.dumps(value,indent=2,ensure_ascii=False)+"\n")
+            handle.flush();os.fsync(handle.fileno())
+        for attempt in range(20):
+            try:
+                os.replace(temporary,path)
+                break
+            except PermissionError:
+                if attempt==19:raise
+                time.sleep(min(0.01*(attempt+1),0.1))
     finally:
         temporary.unlink(missing_ok=True)
 

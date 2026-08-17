@@ -1,11 +1,12 @@
 import hashlib
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 import time
 import zipfile
 import pytest
 import agent_worm_poc.cli as cli
-from agent_worm_poc.cli import (_BudgetTimeout,_RunStatusTracker,_finalize_evidence,
+from agent_worm_poc.cli import (_BudgetTimeout,_RunStatusTracker,_atomic_write_json,_finalize_evidence,
                                 _termination_outcome,claim_real_run_sentinel,emergency_package)
 from agent_worm_poc.server import VLLMServerManager,_model_server_environment,_verify_runtime_artifacts
 from agent_worm_poc.types import ModelSpec
@@ -119,6 +120,28 @@ def test_status_tracker_records_heartbeat_phase_progress_and_budget(tmp_path):
  assert observed['budget']['remaining_hard_seconds']>observed['budget']['remaining_active_seconds']
 
 
+def test_atomic_status_write_retries_temporary_windows_sharing_violation(tmp_path,monkeypatch):
+ path=tmp_path/'RUN_STATUS.json';actual_replace=cli.os.replace;attempts=[]
+ def flaky_replace(source,destination):
+  attempts.append((source,destination))
+  if len(attempts)<3:raise PermissionError('temporary sharing violation')
+  actual_replace(source,destination)
+ monkeypatch.setattr(cli.os,'replace',flaky_replace)
+ _atomic_write_json(path,{'status':'running'})
+ assert json.loads(path.read_text())=={'status':'running'} and len(attempts)==3
+ assert not list(tmp_path.glob('.RUN_STATUS.json.*.tmp'))
+
+
+def test_atomic_status_write_uses_unique_files_under_concurrency(tmp_path):
+ path=tmp_path/'RUN_STATUS.json'
+ def writer(worker):
+  for sequence in range(20):_atomic_write_json(path,{'worker':worker,'sequence':sequence})
+ with ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(writer,range(6)))
+ final=json.loads(path.read_text())
+ assert final['worker'] in range(6) and final['sequence'] in range(20)
+ assert not list(tmp_path.glob('.RUN_STATUS.json.*.tmp'))
+
+
 def test_completed_status_is_published_only_after_verified_evidence(tmp_path,monkeypatch):
  root=tmp_path/'root';root.mkdir();run=tmp_path/'runs'/'r1';run.mkdir(parents=True)
  status={'run_id':'r1','started_epoch':time.time(),'status':'packaging',
@@ -160,7 +183,7 @@ def test_finalizer_rejects_ambiguous_outcome(tmp_path,monkeypatch):
 
 
 def test_emergency_package_recovers_dead_runner_as_aborted(tmp_path,monkeypatch):
- root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.7\n')
+ root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.8\n')
  run=tmp_path/'runs'/'r1';run.mkdir(parents=True);output=tmp_path/'runs'/'forced.zip'
  monkeypatch.setattr(cli,'package_results',_fake_package)
  assert emergency_package(root,run,output)==0
@@ -171,7 +194,7 @@ def test_emergency_package_recovers_dead_runner_as_aborted(tmp_path,monkeypatch)
 
 
 def test_emergency_package_records_operator_cancellation(tmp_path,monkeypatch):
- root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.7\n')
+ root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.8\n')
  run=tmp_path/'runs'/'r1';run.mkdir(parents=True);output=tmp_path/'runs'/'forced.zip'
  monkeypatch.setenv('AGENT_WORM_EMERGENCY_OUTCOME','operator_cancelled')
  monkeypatch.setattr(cli,'package_results',_fake_package)
@@ -195,6 +218,9 @@ def test_runpod_scripts_enforce_single_launch_and_recover_dead_runner(root):
  assert 'torch.cuda.is_available()' in start and 'torch.cuda.is_bf16_supported()' in start
  assert 'timeout --signal=USR1' in start
  assert 'GRACE_SECONDS:-420' in cancel and 'GRACE_SECONDS > 330' in cancel
+ assert 'member_is_runner' in cancel and 'pgrep -g "$PID"' in cancel
+ assert "${ARGS[1]}" in cancel and 'RUNNER_MATCHES' in cancel
+ assert 'for MEMBER in $(' not in cancel and 'for CANDIDATE in $(' not in cancel
  assert 'continuing with orphan cleanup and evidence recovery' in cancel
  assert 'emergency-package' in cancel and "'[v]llm[[:space:]]+serve'" in cancel
  assert 'Existing canonical evidence is already complete and verified' in cancel
@@ -221,6 +247,13 @@ def test_container_exposes_python_runtime_alias(root):
  text=(root/'Dockerfile').read_text()
  assert 'ln -sf "$(command -v python3)" /usr/local/bin/python' in text
  assert 'python --version' in text
+
+
+def test_ci_and_container_use_module_pytest_for_repo_root_imports(root):
+ workflow=(root/'.github/workflows/validate-and-build.yml').read_text()
+ docker=(root/'Dockerfile').read_text()
+ assert 'python -m pytest -q' in workflow
+ assert 'PYTHONPATH=/opt/agent-worm-poc/src python -m pytest -q' in docker
 
 
 def test_server_uses_reproducibility_controls(root):

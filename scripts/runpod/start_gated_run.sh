@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.7}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.8}"
 WORKSPACE="${AGENT_WORM_WORKSPACE:-/workspace}"
 BASE="${AGENT_WORM_OUTPUT_BASE:-$WORKSPACE/agent_worm_outputs}"
 PID_FILE="$BASE/active.pid"

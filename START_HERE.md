@@ -1,10 +1,14 @@
-# Start Here — Agent Worm POC v0.8.7
+# Start Here — Agent Worm POC v0.8.8
 
 ## End goal
 
 Produce defensible evidence showing whether the **ordered intake-to-relay model assignment** changes the probability that a safe document-borne carrier survives two independently generated artifacts.
 
 This POC decides whether the research question is measurable enough to advance to the full SANS proposal. It does not prove a universal ranking of model families.
+
+## Why v0.8.8 replaces v0.8.7
+
+The single v0.8.7 GitHub validation run stopped before any container build because the workflow invoked the `pytest` console entry point with `PYTHONPATH=src`; on Linux that omitted the repository root needed by two tests of release scripts. v0.8.8 invokes pytest as `python -m pytest` in both CI and the Docker build, matching the validated local command, and locks that invocation with a regression test. Its final local fake rehearsal also exposed a transient Windows sharing race in the live atomic status writer; v0.8.8 now uses unique temporary files plus bounded replace retries, with concurrency and fault-injection tests. The operator rehearsal additionally hardened cancellation when a Python runner survives an abnormal `timeout`-leader exit. No v0.8.7 image or paid run was created. The prompts, carriers, scoring, gates, cases, model pins, generation settings, and scientific execution logic are byte-identical to v0.8.7. Details are preserved in `docs/V0_8_7_CI_POSTMORTEM.md`.
 
 ## Why v0.8.7 replaces v0.8.6
 
@@ -32,7 +36,7 @@ The v0.8.1 pre-publish audit found three operational blockers that could have fa
 2. vLLM child processes inherited unrelated interactive and provider credentials;
 3. trusted remote model code did not receive the frozen model revision explicitly, and the downloaded reasoning-parser plugin was not re-hashed immediately before execution.
 
-v0.8.7 retains those launch, secret-isolation, provenance, ShellCheck, container-runtime, artifact-body, and reserved-TLD repairs.
+v0.8.8 retains those launch, secret-isolation, provenance, ShellCheck, container-runtime, artifact-body, and reserved-TLD repairs.
 
 ## The three gates
 
@@ -59,13 +63,13 @@ If any earlier gate fails, the program stops and packages partial evidence.
 Follow `docs/RUNPOD_SETUP.md`. On the Pod, the project is copied to:
 
 ```text
-/workspace/agent_worm_poc_v0.8.7
+/workspace/agent_worm_poc_v0.8.8
 ```
 
 From a Jupyter terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.7
+cd /workspace/agent_worm_poc_v0.8.8
 export RUNPOD_HOURLY_RATE_USD="<exact displayed total hourly rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -75,7 +79,7 @@ bash scripts/runpod/start_gated_run.sh
 Monitor from a second terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.7
+cd /workspace/agent_worm_poc_v0.8.8
 bash scripts/runpod/status.sh
 ```
 
@@ -90,7 +94,7 @@ bash scripts/runpod/cancel_run.sh
 After `status.sh` reports `NOT RUNNING`, stage and send the complete verified bundle with one command:
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.7/scripts/runpod/stage_and_send_evidence.sh
+bash /workspace/agent_worm_poc_v0.8.8/scripts/runpod/stage_and_send_evidence.sh
 ```
 
 Before terminating the Pod, receive and locally verify:

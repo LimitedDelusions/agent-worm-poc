@@ -101,6 +101,6 @@
   ],
   "study_type": "controlled quantitative proof-of-concept transmission-matrix study",
   "unit_of_analysis": "one independently generated intake-to-relay workflow under one ordered pair, policy, document, carrier, and generation-seed block",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "main_ordered_pair_count": 16
 }

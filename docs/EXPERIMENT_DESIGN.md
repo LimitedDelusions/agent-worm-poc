@@ -1,4 +1,4 @@
-# Experiment Design — v0.8.7
+# Experiment Design — v0.8.8
 
 ## Primary POC question
 

@@ -20,7 +20,7 @@ REQUIRED=(
     "docs/SEMANTIC_REVIEW_PROTOCOL.md","docs/POC_DECISION_MATRIX.md","docs/COST_AND_RUNTIME_GATE.md",
     "docs/RUNPOD_SETUP.md","docs/RUN_AND_MONITOR.md",
     "docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md","docs/V0_8_5_POSITIVE_CONTROL_POSTMORTEM.md",
-    "docs/V0_8_6_FAIL_CLOSED_AUDIT.md",
+    "docs/V0_8_6_FAIL_CLOSED_AUDIT.md","docs/V0_8_7_CI_POSTMORTEM.md",
     ".github/workflows/validate-and-build.yml",
     "scripts/runpod/entrypoint.sh","scripts/runpod/start_gated_run.sh","scripts/runpod/status.sh","scripts/runpod/cancel_run.sh",
     "scripts/runpod/stage_and_send_evidence.sh","scripts/release/verify_evidence.py",
@@ -179,7 +179,10 @@ def audit_release(root:Path)->dict:
         if scoring_result["neutralization_language"] or not scoring_result["viable_traceable_carrier"]:
             errors.append("Reserved .invalid contact domain corrupts carrier neutralization scoring")
         docker=(root/"Dockerfile").read_text(encoding="utf-8") if (root/"Dockerfile").exists() else ""
+        workflow=(root/".github/workflows/validate-and-build.yml").read_text(encoding="utf-8")
         if "@sha256:" not in docker:errors.append("Docker base image is not pinned by digest")
+        if "python -m pytest -q" not in workflow or "PYTHONPATH=/opt/agent-worm-poc/src python -m pytest -q" not in docker:
+            errors.append("CI or Docker uses a pytest entry point that can omit repository-root scripts")
         if re.search(r"(?i)(pip|uv pip|apt-get) install",(root/"scripts/runpod/start_gated_run.sh").read_text(encoding="utf-8") if (root/"scripts/runpod/start_gated_run.sh").exists() else ""):
             errors.append("Paid RunPod launch script performs package installation")
         launch_text=(root/"scripts/runpod/start_gated_run.sh").read_text(encoding="utf-8")
@@ -220,7 +223,7 @@ def audit_release(root:Path)->dict:
                or part.endswith(".egg-info") for part in path.parts):continue
         result=subprocess.run(["bash","-n",str(path)],capture_output=True,text=True)
         if result.returncode:errors.append(f"Shell syntax error {path.relative_to(root)}: {result.stderr.strip()}")
-    result={"release":"0.8.7","passed":not errors,"errors":errors,"warnings":warnings,
+    result={"release":"0.8.8","passed":not errors,"errors":errors,"warnings":warnings,
             "scientific_controls":{"carrier_variants":3,"base_documents":3,
               "ordered_intake_relay_pairs":16,"generation_seeds_per_carrier_document":2,
               "matched_policy_inputs":True,"matched_assignment_blocks":True,

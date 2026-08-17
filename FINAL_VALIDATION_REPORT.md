@@ -1,10 +1,10 @@
-# Final Validation Report — Agent Worm POC v0.8.7
+# Final Validation Report — Agent Worm POC v0.8.8
 
 ## Release status
 
-**Local release-candidate validation passed.** v0.8.7 is a versioned fail-closed correction created after the complete v0.8.6 high-level rehearsal. No v0.8.6 paid run was started. The final fake-run identifier and evidence checksum are recorded in the release handoff after this report and the integrity manifest are frozen; embedding them here would alter the source snapshot they identify. Commit, workflow, and image digest remain external publication gates.
+**Local release-candidate validation passed.** v0.8.8 preserves the v0.8.7 fail-closed design, corrects the Linux CI/Docker pytest invocation that stopped the sole v0.8.7 workflow before image construction, hardens the atomic live-status writer against concurrent/transient Windows sharing races, and recovers a surviving runner after abnormal timeout-leader death. No v0.8.7 image or paid run was created. The final fake-run identifier and evidence checksum are recorded in the release handoff after this report and the integrity manifest are frozen; embedding them here would alter the source snapshot they identify. Commit, workflow, and image digest remain external publication gates.
 
-The release does not alter prompts, carriers, deterministic carrier scoring, source documents, case construction, randomization seeds, generation temperature/top-p/token limits, vLLM generation controls, or the artifact-only stage boundary. It intentionally changes gate enforcement, semantic-review construction, model revision pinning, retry telemetry, operator launch/recovery, and evidence verification. The rationale is preserved in `docs/V0_8_6_FAIL_CLOSED_AUDIT.md`.
+Relative to v0.8.7, the release does not alter prompts, carriers, scoring, gates, source documents, case construction, randomization seeds, model pins, generation settings, scientific execution logic, or the artifact-only stage boundary. It changes release identity, documentation/integrity metadata, the CI/Docker pytest invocation, and operational status/cancellation resilience, with focused regressions. The inherited fail-closed rationale is preserved in `docs/V0_8_6_FAIL_CLOSED_AUDIT.md`; the CI and local rehearsal findings are preserved in `docs/V0_8_7_CI_POSTMORTEM.md`.
 
 ## Scientific controls to validate
 
@@ -27,6 +27,7 @@ The release does not alter prompts, carriers, deterministic carrier scoring, sou
 - Exact hourly-rate re-entry before the claim and process launch.
 - Strict model-server environment with only required Hugging Face credential access.
 - Live heartbeat, phase/model/stage/request progress, and remaining budget.
+- Unique atomic status temporaries with bounded sharing-violation retry and concurrent-write tests.
 - Cancellation grace longer than worst-case model cleanup, orphan cleanup, and emergency packaging.
 - Execution outcome kept separate from evidence outcome.
 - Final status published only after ZIP, checksum, metadata, CRC, and package manifest verify.
@@ -38,10 +39,10 @@ The complete local sequence was run with Python 3.11 and Git for Windows Bash. T
 
 | Validation | Result |
 |---|---:|
-| Automated unit/integration tests | **Passed — 121** |
+| Automated unit/integration tests | **Passed — 124** |
 | Ruff | **Passed** |
 | Release/design audit | **Passed — 0 errors, 0 warnings** |
-| Integrity manifest | **Passed — 89 files** |
+| Integrity manifest | **Passed — 90 files** |
 | Python compilation and Git Bash syntax | **Passed** |
 | Complete simulated gated sequence | **Passed — 876 workflows, 1,776 stage events** |
 | Compatibility / positive / shakedown / main validation | **Passed** |
@@ -53,4 +54,4 @@ Local ShellCheck was unavailable on Windows; the GitHub validation job is the au
 
 ## Required external gates
 
-Before another paid run, exactly one GitHub Actions run must validate and build the immutable v0.8.7 tag; its public `ghcr.io/...@sha256:...` reference, workflow URL, commit SHA, and build warnings must be recorded. Real compatibility, positive-control, and shakedown outcomes remain unknown until the one authorized paid run. A valid main null is an acceptable empirical result and must not be rerun to chase variation.
+Before another paid run, exactly one GitHub Actions run must validate and build the immutable v0.8.8 tag; its public `ghcr.io/...@sha256:...` reference, workflow URL, commit SHA, and build warnings must be recorded. Real compatibility, positive-control, and shakedown outcomes remain unknown until the one authorized paid run. A valid main null is an acceptable empirical result and must not be rerun to chase variation.

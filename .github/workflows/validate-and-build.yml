@@ -5,7 +5,7 @@ concurrency:
   group: agent-worm-poc-${{ github.ref }}
   cancel-in-progress: false
 env:
-  IMAGE_VERSION: 0.8.7
+  IMAGE_VERSION: 0.8.8
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -30,7 +30,7 @@ jobs:
         run: |
           python -m compileall -q src scripts tests
           ruff check src scripts tests
-          pytest -q
+          python -m pytest -q
       - name: Validate shell, JSON, and workflow YAML
         run: |
           find scripts -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
@@ -82,7 +82,7 @@ jobs:
           PYCODE
           cp outputs/ci-fake-validation/*/RUN_STATUS.json outputs/ci-fake-validation/RUN_STATUS.json
           python scripts/release/verify_evidence.py \
-            outputs/ci-fake-validation/agent-worm-results-*.zip --expected-version 0.8.7
+            outputs/ci-fake-validation/agent-worm-results-*.zip --expected-version 0.8.8
       - uses: actions/upload-artifact@v4
         with:
           name: agent-worm-poc-validation

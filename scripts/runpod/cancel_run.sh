@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.7}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.8}"
 WORKSPACE="${AGENT_WORM_WORKSPACE:-/workspace}"
 BASE="${AGENT_WORM_OUTPUT_BASE:-$WORKSPACE/agent_worm_outputs}"
 PID_FILE="$BASE/active.pid"
@@ -20,11 +20,35 @@ PID="$(cat "$PID_FILE" 2>/dev/null || true)"
 FORCED=0
 RECOVERY_OUTCOME="technical_failure"
 
-runner_identity(){
+leader_identity(){
   [[ "$PID" =~ ^[0-9]+$ ]] || return 1
   kill -0 "$PID" 2>/dev/null || return 1
   [[ "$(ps -o pgid= -p "$PID" 2>/dev/null | tr -d ' ')" == "$PID" ]] || return 1
   [[ "$(tr '\0' ' ' < "/proc/$PID/cmdline" 2>/dev/null || true)" == *"run_gated.py real-gated"* ]]
+}
+
+member_is_runner(){
+  local CANDIDATE="$1"
+  local -a ARGS=()
+  [[ -r "/proc/$CANDIDATE/cmdline" ]] || return 1
+  mapfile -d '' -t ARGS < "/proc/$CANDIDATE/cmdline" || return 1
+  (( ${#ARGS[@]} >= 7 )) || return 1
+  [[ "${ARGS[0]##*/}" == python* ]] || return 1
+  [[ "${ARGS[1]}" == "$ROOT/scripts/run_gated.py" && "${ARGS[2]}" == "real-gated" ]] || return 1
+  [[ "${ARGS[3]}" == "--root" && "${ARGS[4]}" == "$ROOT" ]] || return 1
+  [[ "${ARGS[5]}" == "--output-root" && "${ARGS[6]}" == "$BASE" ]]
+}
+
+runner_identity(){
+  [[ "$PID" =~ ^[0-9]+$ ]] || return 1
+  mapfile -t RUNNER_MATCHES < <(
+    while IFS= read -r MEMBER;do
+      [[ -n "$MEMBER" ]] || continue
+      member_is_runner "$MEMBER" && printf '%s\n' "$MEMBER"
+    done < <(pgrep -g "$PID" 2>/dev/null || true)
+  )
+  (( ${#RUNNER_MATCHES[@]} == 1 )) && return 0
+  (( ${#RUNNER_MATCHES[@]} == 0 )) && leader_identity
 }
 
 runner_group_alive(){
@@ -33,9 +57,12 @@ runner_group_alive(){
 
 if ! runner_identity;then
   mapfile -t DISCOVERED_GROUPS < <(
-    for CANDIDATE in $(pgrep -f '[r]un_gated.py[[:space:]]+real-gated' 2>/dev/null || true);do
-      ps -o pgid= -p "$CANDIDATE" 2>/dev/null | tr -d ' '
-    done | awk '/^[0-9]+$/' | sort -nu
+    {
+      while IFS= read -r CANDIDATE;do
+        [[ -n "$CANDIDATE" ]] || continue
+        ps -o pgid= -p "$CANDIDATE" 2>/dev/null | tr -d ' '
+      done < <(pgrep -f '[r]un_gated.py[[:space:]]+real-gated' 2>/dev/null || true)
+    } | awk '/^[0-9]+$/' | sort -nu
   )
   if (( ${#DISCOVERED_GROUPS[@]} > 1 ));then
     fail "multiple gated-run process groups were discovered; preserve evidence and inspect manually"

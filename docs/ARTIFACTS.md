@@ -58,10 +58,10 @@
 On the Pod, do not assemble these files manually. After `status.sh` reports `NOT RUNNING`, run:
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.7/scripts/runpod/stage_and_send_evidence.sh
+bash /workspace/agent_worm_poc_v0.8.8/scripts/runpod/stage_and_send_evidence.sh
 ```
 
-After receiving the folder locally, run the release verifier from the v0.8.7 repository:
+After receiving the folder locally, run the release verifier from the v0.8.8 repository:
 
 ```powershell
 $RunPodCtl = (Get-Command runpodctl -ErrorAction SilentlyContinue).Source
@@ -69,13 +69,13 @@ if (-not $RunPodCtl) {
   $RunPodCtl = (Get-ChildItem "$env:USERPROFILE\Downloads" -Filter runpodctl.exe -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 }
 if (-not $RunPodCtl) { throw 'runpodctl.exe was not found; locate the executable installed for the prior transfer.' }
-$ReceiveRoot = Join-Path $env:USERPROFILE ('Downloads\agent-worm-v087-' + (Get-Date -Format 'yyyyMMddTHHmmss'))
+$ReceiveRoot = Join-Path $env:USERPROFILE ('Downloads\agent-worm-v088-' + (Get-Date -Format 'yyyyMMddTHHmmss'))
 New-Item -ItemType Directory -Path $ReceiveRoot -Force | Out-Null
 Push-Location $ReceiveRoot
 try { & $RunPodCtl receive '<one-time-code>'; if ($LASTEXITCODE) { throw "runpodctl receive failed: $LASTEXITCODE" } }
 finally { Pop-Location }
 $zip = Get-ChildItem $ReceiveRoot -Recurse -Filter 'agent-worm-results-*.zip' -File | Select-Object -First 1
-py -3.11 scripts\release\verify_evidence.py $zip.FullName --expected-version 0.8.7
+py -3.11 scripts\release\verify_evidence.py $zip.FullName --expected-version 0.8.8
 ```
 
 The command verifies the full transfer manifest when present, ZIP/sidecar checksum and metadata, CRC, exact package membership and every packaged hash, source snapshot, release version, and byte equality between standalone and packaged `RUN_STATUS.json`.

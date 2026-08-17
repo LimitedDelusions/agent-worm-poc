@@ -1,4 +1,4 @@
-# Full Scientific and Software Audit — v0.8.7
+# Full Scientific and Software Audit — v0.8.8
 
 ## Audit objective
 
@@ -22,15 +22,18 @@ Prevent a second paid run from being mechanically successful but scientifically 
 14. **Container and price provenance could be incomplete.** The operator-declared image digest, recorded Pod-template match, build commit, runtime marker, displayed hourly rate, model arguments, and downloaded runtime-artifact hashes are preserved. The container does not falsely claim it can introspect a provider digest when RunPod exposes none.
 15. **The schema allowed facts outside the transported artifact.** The real v0.8.4 compatibility gate showed that Gemma correctly populated dedicated intake fields while omitting those facts from `artifact_body`, the only content passed downstream and scored for utility. v0.8.5 states the artifact-body fact-retention contract explicitly and identically in every intake and relay policy prompt.
 16. **A reserved test-domain suffix impersonated neutralization.** The real v0.8.5 positive control exposed a collision between the bare-word `invalid` neutralization rule and synthetic contacts under `example.invalid`. v0.8.6 masks contact email addresses ending in that reserved TLD before local neutralization analysis while preserving genuine standalone neutralization terms. The failed pilot and isolated rescore are preserved in `docs/V0_8_5_POSITIVE_CONTROL_POSTMORTEM.md`.
-17. **Equal policy failure could pass utility calibration.** v0.8.7 requires the existing 0.90 clean-task threshold overall and in every policy/model/role cell; the neutral-hardened delta is now additional rather than sufficient.
+17. **Equal policy failure could pass utility calibration.** v0.8.8 requires the existing 0.90 clean-task threshold overall and in every policy/model/role cell; the neutral-hardened delta is now additional rather than sufficient.
 18. **Incomplete evidence could look analyzable.** Compatibility, positive, shakedown, and main gates now require exact rows, ordered pairs, role labels, conditions, blocks, workflow IDs, and parseable endpoints.
 19. **A main measurement failure could look complete.** Execution, evidence, design, measurement, assay, and empirical outcomes are now separate. A valid null completes; invalid design or measurement is non-evaluable.
-20. **The semantic sensitivity export diverged from its protocol.** v0.8.7 includes all exact positives, ambiguous candidates, and sham artifacts; stratifies negatives; reconciles source ledgers; anchors packet contents; and requires two independent reviews, exact-reference assessment, agreement/kappa, and blinded adjudication.
+20. **The semantic sensitivity export diverged from its protocol.** v0.8.8 includes all exact positives, ambiguous candidates, and sham artifacts; stratifies negatives; reconciles source ledgers; anchors packet contents; and requires two independent reviews, exact-reference assessment, agreement/kappa, and blinded adjudication.
 21. **A paid rerun or incomplete finalizer could overwrite interpretation.** One real run is atomically claimed per release/image, the displayed rate is re-confirmed, and final status is published only after verified evidence. Recovery and transfer are scripted.
 22. **Moving upstream model heads weakened replay.** The four model, tokenizer, and trusted-code commits are release-pinned and access-checked before the one-run claim.
 23. **A transport retry could become outcome selection.** Only transient network/availability failures are retried; a malformed successful model response is preserved and scored once, with end-to-end latency explicitly defined.
 24. **Phase summaries could contradict the enforced gates.** Compatibility and calibration now emit phase-specific gate artifacts; main decision gates exist only for the main phase.
 25. **Forced recovery could package an ambiguous status or block transfer after successful cleanup.** Emergency evidence requires a terminal outcome, canonical evidence is reused when already verified, and the transfer helper continues after force only when full verification passes.
+26. **The Linux test entry point omitted repository-root script modules.** The sole v0.8.7 workflow failed during collection before any image was built. v0.8.8 uses `python -m pytest` in CI and Docker, matching the validated local invocation, and a regression test locks both call sites.
+27. **Concurrent or transient readers could interrupt an atomic status replacement.** The final v0.8.8 local rehearsal reproduced a Windows sharing violation at the packaging transition. Status writes now use unique temporary files, durable flushes, and bounded replacement retries; fault-injection and concurrent-write tests cover the path.
+28. **A dead timeout leader could leave a live runner outside cancellation.** Recovery now authenticates the exact Python `real-gated` command inside the process group, so a leaderless but otherwise intact group is still cancelled and packaged; unrelated or multiple groups remain fail-closed.
 
 ## Residual limitations that cannot be removed from a POC
 

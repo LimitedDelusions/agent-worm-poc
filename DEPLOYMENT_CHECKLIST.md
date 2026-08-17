@@ -1,4 +1,4 @@
-# Live Deployment Checklist — v0.8.7
+# Live Deployment Checklist — v0.8.8
 
 ## Free gates
 
@@ -33,7 +33,7 @@
 - [ ] Jupyter requires the configured password
 - [ ] `nvidia-smi` shows one 80 GB A100
 - [ ] Launcher CUDA/PyTorch/BF16 allocation probe passes before the one-run claim
-- [ ] `/workspace/agent_worm_poc_v0.8.7` exists
+- [ ] `/workspace/agent_worm_poc_v0.8.8` exists
 - [ ] At least 300 GB is free under `/workspace`
 - [ ] No unrelated process is using significant GPU memory
 - [ ] `RUNPOD_HOURLY_RATE_USD` is exported with the exact displayed rate

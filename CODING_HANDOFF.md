@@ -1,4 +1,4 @@
-# Coding Handoff — v0.8.7
+# Coding Handoff — v0.8.8
 
 ## Objective
 
@@ -9,17 +9,17 @@ Publish one immutable, tested container before another paid RunPod session. Do n
 PowerShell:
 
 ```powershell
-Get-FileHash .\agent_worm_poc_v0.8.7.zip -Algorithm SHA256
-Get-Content .\agent_worm_poc_v0.8.7.zip.sha256
-Expand-Archive .\agent_worm_poc_v0.8.7.zip .\agent-worm-poc-v087
-Set-Location .\agent-worm-poc-v087\agent_worm_poc_v0.8.7
+Get-FileHash .\agent_worm_poc_v0.8.8.zip -Algorithm SHA256
+Get-Content .\agent_worm_poc_v0.8.8.zip.sha256
+Expand-Archive .\agent_worm_poc_v0.8.8.zip .\agent-worm-poc-v088
+Set-Location .\agent-worm-poc-v088\agent_worm_poc_v0.8.8
 ```
 
 The two hashes must match.
 
 ## 2. Replace the repository cleanly
 
-Do not extract over an older source tree. Preserve only `.git`, then copy v0.8.7 into the repository root.
+Do not extract over an older source tree. Preserve only `.git`, then copy v0.8.8 into the repository root.
 
 ## 3. Run free validation
 
@@ -30,7 +30,7 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]" PyYAML==6.0.2
 python -m compileall -q src scripts tests
 ruff check src scripts tests
-pytest -q
+python -m pytest -q
 python scripts\release\generate_integrity.py --check
 python scripts\validate_release.py
 Remove-Item outputs\local-fake -Recurse -Force -ErrorAction SilentlyContinue
@@ -38,7 +38,7 @@ python scripts\run_gated.py fake-gated --root . --output-root outputs\local-fake
 $run = Get-ChildItem outputs\local-fake -Directory | Select-Object -First 1
 Copy-Item (Join-Path $run.FullName 'RUN_STATUS.json') outputs\local-fake\RUN_STATUS.json
 $zip = Get-ChildItem outputs\local-fake -Filter 'agent-worm-results-*.zip' -File | Select-Object -First 1
-python scripts\release\verify_evidence.py $zip.FullName --expected-version 0.8.7
+python scripts\release\verify_evidence.py $zip.FullName --expected-version 0.8.8
 ```
 
 Expected results:
@@ -55,20 +55,20 @@ Expected results:
 
 ```powershell
 git add -A
-git commit -m "Agent worm POC v0.8.7 fail-closed experiment hardening"
-git tag v0.8.7
+git commit -m "Agent worm POC v0.8.8 resilient immutable release"
+git tag v0.8.8
 git push origin HEAD
-git push origin v0.8.7
+git push origin v0.8.8
 ```
 
 ## 5. Build the container
 
 1. Start exactly one run against the immutable tag:
    ```powershell
-   gh workflow run validate-and-build.yml --ref v0.8.7
+   gh workflow run validate-and-build.yml --ref v0.8.8
    ```
 2. Open GitHub → **Actions** and select **Validate and Build Agent Worm POC**.
-3. Select the run for `v0.8.7`; do not dispatch a duplicate while it is active.
+3. Select the run for `v0.8.8`; do not dispatch a duplicate while it is active.
 4. Confirm `validate` is green.
 5. Confirm `build` is green.
 6. Download artifact `agent-worm-poc-container-reference`.
