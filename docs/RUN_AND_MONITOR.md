@@ -3,7 +3,7 @@
 ## Start
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.8
+cd /workspace/agent_worm_poc_v0.8.9
 export RUNPOD_HOURLY_RATE_USD="<exact displayed rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -15,7 +15,7 @@ The command first performs free-in-container release, source, pinned-model-acces
 ## Monitor
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.8/scripts/runpod/status.sh
+bash /workspace/agent_worm_poc_v0.8.9/scripts/runpod/status.sh
 ```
 
 Check:
@@ -40,7 +40,7 @@ Check:
 ## Safe cancellation
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.8/scripts/runpod/cancel_run.sh
+bash /workspace/agent_worm_poc_v0.8.9/scripts/runpod/cancel_run.sh
 ```
 
 Wait for `status.sh` to report NOT RUNNING before stopping or terminating the Pod.
@@ -58,7 +58,7 @@ Read `gates.main.empirical_outcome` separately. `valid_null_no_ordered_pair_rate
 An aborted run is still expected to produce verified partial evidence. After `Process: NOT RUNNING`, run:
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.8/scripts/runpod/stage_and_send_evidence.sh
+bash /workspace/agent_worm_poc_v0.8.9/scripts/runpod/stage_and_send_evidence.sh
 ```
 
 Receive and verify that bundle locally before troubleshooting or terminating.

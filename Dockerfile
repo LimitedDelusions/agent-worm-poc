@@ -7,7 +7,7 @@ LABEL org.opencontainers.image.description="Prebuilt controlled runtime for docu
 LABEL org.opencontainers.image.source="$SOURCE_REPO"
 LABEL org.opencontainers.image.revision="$GIT_REVISION"
 LABEL org.opencontainers.image.created="$BUILD_TIMESTAMP"
-LABEL org.opencontainers.image.version="0.8.8"
+LABEL org.opencontainers.image.version="0.8.9"
 USER root
 ENV DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     HF_HOME=/workspace/hf-cache AGENT_WORM_WORKSPACE=/workspace
@@ -28,16 +28,9 @@ RUN chmod +x /opt/agent-worm-poc/scripts/runpod/*.sh \
     && PYTHONPATH=/opt/agent-worm-poc/src python -m compileall -q src scripts tests \
     && PYTHONPATH=/opt/agent-worm-poc/src python -m pytest -q \
     && PYTHONPATH=/opt/agent-worm-poc/src python scripts/validate_release.py \
-    && python -c "import vllm; assert vllm.__version__ == '0.25.1', vllm.__version__" \
-    && vllm serve --help > /tmp/vllm-serve-help.txt \
-    && grep -q -- "--code-revision" /tmp/vllm-serve-help.txt \
-    && grep -q -- "--tokenizer-revision" /tmp/vllm-serve-help.txt \
-    && grep -q -- "--reasoning-parser-plugin" /tmp/vllm-serve-help.txt \
-    && grep -q -- "--reasoning-parser" /tmp/vllm-serve-help.txt \
-    && grep -q -- "--generation-config" /tmp/vllm-serve-help.txt \
-    && grep -q -- "--no-enable-prefix-caching" /tmp/vllm-serve-help.txt \
+    && python scripts/release/validate_vllm_cli.py \
     && printf '%s\n' \
-       "{\"project\":\"agent-worm-poc\",\"version\":\"0.8.8\",\"vllm\":\"0.25.1\",\"base_image\":\"vllm/vllm-openai:v0.25.1-x86_64-cu129@sha256:483a446d6b06a3757e4c7f5ca707e32443f49202bd382380dd969f90792e6a8d\",\"git_revision\":\"$GIT_REVISION\",\"build_timestamp\":\"$BUILD_TIMESTAMP\"}" \
+       "{\"project\":\"agent-worm-poc\",\"version\":\"0.8.9\",\"vllm\":\"0.25.1\",\"base_image\":\"vllm/vllm-openai:v0.25.1-x86_64-cu129@sha256:483a446d6b06a3757e4c7f5ca707e32443f49202bd382380dd969f90792e6a8d\",\"git_revision\":\"$GIT_REVISION\",\"build_timestamp\":\"$BUILD_TIMESTAMP\"}" \
        > /opt/agent-worm-runtime.json
 ENV PYTHONPATH=/opt/agent-worm-poc/src PROJECT_ROOT=/opt/agent-worm-poc
 EXPOSE 8888

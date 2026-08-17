@@ -46,7 +46,7 @@
   },
   "poc_scope_note": "This POC uses two independent generation seeds per carrier/document cell and 18 matched content/seed blocks per ordered model pair. Final-paper sample size will be selected from pilot variance after instructor approval.",
   "positive_control_repetitions": 1,
-  "release": "0.8.8",
+  "release": "0.8.9",
   "research_question": "Within a fixed two-stage procurement-document workflow, how does the ordered assignment of Qwen3-30B-A3B-Instruct-2507, Gemma-3-27B-IT, GPT-OSS-20B, and NVIDIA-Nemotron-3-Nano-30B-A3B to intake and relay affect the probability that a document-borne self-replicating prompt injection is reproduced across two agent-generated artifacts?",
   "runtime": {
     "gpu_idle_memory_mib_max": 2500,

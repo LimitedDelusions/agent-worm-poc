@@ -20,10 +20,11 @@ REQUIRED=(
     "docs/SEMANTIC_REVIEW_PROTOCOL.md","docs/POC_DECISION_MATRIX.md","docs/COST_AND_RUNTIME_GATE.md",
     "docs/RUNPOD_SETUP.md","docs/RUN_AND_MONITOR.md",
     "docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md","docs/V0_8_5_POSITIVE_CONTROL_POSTMORTEM.md",
-    "docs/V0_8_6_FAIL_CLOSED_AUDIT.md","docs/V0_8_7_CI_POSTMORTEM.md",
+    "docs/V0_8_6_FAIL_CLOSED_AUDIT.md","docs/V0_8_7_CI_POSTMORTEM.md","docs/V0_8_8_BUILD_POSTMORTEM.md",
     ".github/workflows/validate-and-build.yml",
     "scripts/runpod/entrypoint.sh","scripts/runpod/start_gated_run.sh","scripts/runpod/status.sh","scripts/runpod/cancel_run.sh",
     "scripts/runpod/stage_and_send_evidence.sh","scripts/release/verify_evidence.py",
+    "scripts/release/validate_vllm_cli.py",
     "scripts/release/summarize_semantic_review.py","scripts/check_scientific_shakedown.py",
     "src/agent_worm_poc/engine.py","src/agent_worm_poc/scoring.py","src/agent_worm_poc/scientific_gates.py",
     "src/agent_worm_poc/runtime.py","src/agent_worm_poc/evidence_verify.py","scripts/release/generate_integrity.py",
@@ -205,10 +206,18 @@ def audit_release(root:Path)->dict:
             errors.append("Real adapter does not request structured JSON output")
         if "except httpx.TransportError" not in adapter_text or "except Exception:parsed=None" not in adapter_text:
             errors.append("Adapter does not separate transient transport retry from model-output validity")
-        for flag in ("--code-revision","--tokenizer-revision","--reasoning-parser-plugin",
-                     "--reasoning-parser","--generation-config","--no-enable-prefix-caching"):
-            if f'grep -q -- "{flag}"' not in docker:
-                errors.append(f"Docker build does not verify vLLM CLI flag {flag}")
+        validator=(root/"scripts/release/validate_vllm_cli.py").read_text(encoding="utf-8")
+        if "python scripts/release/validate_vllm_cli.py" not in docker or "vllm serve --help" in docker:
+            errors.append("Docker build does not use GPU-independent vLLM CLI validation")
+        if "create_parser_for_docs" not in validator or "CpuPlatform" not in validator:
+            errors.append("vLLM CLI validator does not use the pinned parser-safe platform path")
+        for flag in ("--api-key","--code-revision","--disable-log-stats","--dtype",
+                     "--generation-config","--gpu-memory-utilization","--host",
+                     "--max-model-len","--max-num-seqs","--no-enable-prefix-caching",
+                     "--port","--reasoning-parser","--reasoning-parser-plugin","--revision",
+                     "--served-model-name","--tokenizer-revision","--trust-remote-code"):
+            if f'"{flag}"' not in validator:
+                errors.append(f"GPU-independent validator does not require vLLM CLI flag {flag}")
     except Exception as exc:
         errors.append(f"Configuration/design audit failed: {type(exc).__name__}: {exc}")
     secrets=ensure_no_secret_text(root)
@@ -223,7 +232,7 @@ def audit_release(root:Path)->dict:
                or part.endswith(".egg-info") for part in path.parts):continue
         result=subprocess.run(["bash","-n",str(path)],capture_output=True,text=True)
         if result.returncode:errors.append(f"Shell syntax error {path.relative_to(root)}: {result.stderr.strip()}")
-    result={"release":"0.8.8","passed":not errors,"errors":errors,"warnings":warnings,
+    result={"release":"0.8.9","passed":not errors,"errors":errors,"warnings":warnings,
             "scientific_controls":{"carrier_variants":3,"base_documents":3,
               "ordered_intake_relay_pairs":16,"generation_seeds_per_carrier_document":2,
               "matched_policy_inputs":True,"matched_assignment_blocks":True,

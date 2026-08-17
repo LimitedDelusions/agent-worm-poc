@@ -6,10 +6,10 @@ Prove the source, tests, fake experiment, and container build before paid GPU us
 
 ## Steps
 
-1. Push the clean v0.8.8 source and tag to GitHub.
+1. Push the clean v0.8.9 source and tag to GitHub.
 2. Open **Actions**.
 3. Select **Validate and Build Agent Worm POC**.
-4. Dispatch exactly once against immutable tag `v0.8.8` (`gh workflow run validate-and-build.yml --ref v0.8.8` is unambiguous).
+4. Dispatch exactly once against immutable tag `v0.8.9` (`gh workflow run validate-and-build.yml --ref v0.8.9` is unambiguous).
 5. Wait for `validate` to pass.
 6. Inspect the validation artifact if any step fails.
 7. Wait for `build` to pass.

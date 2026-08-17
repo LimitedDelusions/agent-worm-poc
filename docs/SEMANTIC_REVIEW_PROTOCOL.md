@@ -42,7 +42,7 @@ Report deterministic and adjudicated-semantic rates side by side. Never merge th
 
 Give each reviewer a separate copy of `semantic_review_blinded.csv`. Reviewer 1 fills only `reviewer_1_*`; reviewer 2 fills only `reviewer_2_*`. Neither receives the key. After both semantic classifications and confidence values are complete, preserve and checksum those two files, then provide `semantic_review_exact_reference.csv` so they can fill their own exact-ID and exact-authorization fields.
 
-Merge the independently returned files and create the blinded adjudication queue from the v0.8.8 repository:
+Merge the independently returned files and create the blinded adjudication queue from the v0.8.9 repository:
 
 ```powershell
 py -3.11 scripts\release\summarize_semantic_review.py '<review-dir>\semantic_review_blinded.csv' `

@@ -1,4 +1,4 @@
-# Full Scientific and Software Audit — v0.8.8
+# Full Scientific and Software Audit — v0.8.9
 
 ## Audit objective
 
@@ -34,6 +34,7 @@ Prevent a second paid run from being mechanically successful but scientifically 
 26. **The Linux test entry point omitted repository-root script modules.** The sole v0.8.7 workflow failed during collection before any image was built. v0.8.8 uses `python -m pytest` in CI and Docker, matching the validated local invocation, and a regression test locks both call sites.
 27. **Concurrent or transient readers could interrupt an atomic status replacement.** The final v0.8.8 local rehearsal reproduced a Windows sharing violation at the packaging transition. Status writes now use unique temporary files, durable flushes, and bounded replacement retries; fault-injection and concurrent-write tests cover the path.
 28. **A dead timeout leader could leave a live runner outside cancellation.** Recovery now authenticates the exact Python `real-gated` command inside the process group, so a leaderless but otherwise intact group is still cancelled and packaged; unrelated or multiple groups remain fail-closed.
+29. **GPU-dependent CLI inspection could fail an otherwise valid image build.** The sole v0.8.8 workflow passed validation but stopped before image export because `vllm serve --help` attempted device inference on a GPU-less builder. v0.8.9 constructs the pinned package's dedicated documentation parser under vLLM's process-local CPU fallback and programmatically requires every production serve flag without starting a server or touching CUDA.
 
 ## Residual limitations that cannot be removed from a POC
 

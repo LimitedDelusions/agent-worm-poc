@@ -5,7 +5,7 @@ concurrency:
   group: agent-worm-poc-${{ github.ref }}
   cancel-in-progress: false
 env:
-  IMAGE_VERSION: 0.8.8
+  IMAGE_VERSION: 0.8.9
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -82,7 +82,7 @@ jobs:
           PYCODE
           cp outputs/ci-fake-validation/*/RUN_STATUS.json outputs/ci-fake-validation/RUN_STATUS.json
           python scripts/release/verify_evidence.py \
-            outputs/ci-fake-validation/agent-worm-results-*.zip --expected-version 0.8.8
+            outputs/ci-fake-validation/agent-worm-results-*.zip --expected-version 0.8.9
       - uses: actions/upload-artifact@v4
         with:
           name: agent-worm-poc-validation
