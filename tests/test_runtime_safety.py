@@ -186,7 +186,7 @@ def test_finalizer_rejects_ambiguous_outcome(tmp_path,monkeypatch):
 
 
 def test_emergency_package_recovers_dead_runner_as_aborted(tmp_path,monkeypatch):
- root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.9\n')
+ root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.10\n')
  run=tmp_path/'runs'/'r1';run.mkdir(parents=True);output=tmp_path/'runs'/'forced.zip'
  monkeypatch.setattr(cli,'package_results',_fake_package)
  assert emergency_package(root,run,output)==0
@@ -197,7 +197,7 @@ def test_emergency_package_recovers_dead_runner_as_aborted(tmp_path,monkeypatch)
 
 
 def test_emergency_package_records_operator_cancellation(tmp_path,monkeypatch):
- root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.9\n')
+ root=tmp_path/'root';root.mkdir();(root/'VERSION').write_text('0.8.10\n')
  run=tmp_path/'runs'/'r1';run.mkdir(parents=True);output=tmp_path/'runs'/'forced.zip'
  monkeypatch.setenv('AGENT_WORM_EMERGENCY_OUTCOME','operator_cancelled')
  monkeypatch.setattr(cli,'package_results',_fake_package)
@@ -259,6 +259,13 @@ def test_ci_and_container_use_module_pytest_for_repo_root_imports(root):
  assert 'PYTHONPATH=/opt/agent-worm-poc/src python -m pytest -q' in docker
 
 
+def test_ci_build_is_bound_to_exact_release_tag(root):
+ workflow=(root/'.github/workflows/validate-and-build.yml').read_text()
+ assert 'GITHUB_REF_TYPE' in workflow and 'GITHUB_REF_NAME' in workflow
+ assert 'refs/tags/v${IMAGE_VERSION}' in workflow
+ assert "$(tr -d '\\r\\n' < VERSION)" in workflow
+
+
 def test_container_validates_vllm_cli_without_build_host_gpu(root):
  docker=(root/'Dockerfile').read_text()
  validator=(root/'scripts/release/validate_vllm_cli.py').read_text()
@@ -271,12 +278,20 @@ def test_container_validates_vllm_cli_without_build_host_gpu(root):
 
 
 def test_vllm_cli_validator_rejects_wrong_version_and_every_missing_flag():
- with pytest.raises(RuntimeError,match='Expected vLLM'):validate_version('0.25.0')
+ validate_version('0.25.1+cu129')
+ for wrong in ('0.25.0','0.25.1','0.25.1+cu128','0.25.2+cu129'):
+  with pytest.raises(RuntimeError,match='exact vLLM distribution'):validate_version(wrong)
  for missing in REQUIRED_SERVE_FLAGS:
   parser=argparse.ArgumentParser(add_help=False)
   for flag in REQUIRED_SERVE_FLAGS:
    if flag!=missing:parser.add_argument(flag,action='store_true')
   with pytest.raises(RuntimeError,match='missing flags'):validate_parser(parser)
+
+
+def test_paid_launcher_cross_checks_live_vllm_distribution(root):
+ text=(root/'scripts/runpod/start_gated_run.sh').read_text()
+ assert "distribution_version('vllm')" in text
+ assert "marker.get('vllm_distribution_version')" in text
 
 
 def test_server_uses_reproducibility_controls(root):

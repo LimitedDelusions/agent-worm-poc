@@ -17,7 +17,7 @@ def load_models(path: str | Path) -> list[ModelSpec]:
 
 def load_experiment(path: str | Path) -> dict:
     data=load_json(path)
-    if data.get("release") != "0.8.9":
+    if data.get("release") != "0.8.10":
         raise ValueError("Experiment config release mismatch")
     return data
 

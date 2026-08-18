@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.9}"
+ROOT="${AGENT_WORM_PROJECT_ROOT:-/workspace/agent_worm_poc_v0.8.10}"
 WORKSPACE="${AGENT_WORM_WORKSPACE:-/workspace}"
 BASE="${AGENT_WORM_OUTPUT_BASE:-$WORKSPACE/agent_worm_outputs}"
 PID_FILE="$BASE/active.pid"
@@ -39,6 +39,7 @@ fi
 
 read -r RELEASE RUNTIME_REVISION <<<"$(PYTHONPATH="$ROOT/src" python - "$ROOT" <<'PYCODE'
 import json,os,re,sys
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 root=Path(sys.argv[1])
 declared=os.environ.get('AGENT_WORM_IMAGE_REF','')
@@ -51,6 +52,14 @@ if not marker_path.is_file():
 marker=json.loads(marker_path.read_text(encoding='utf-8'))
 if not version or manifest.get('release')!=version or experiment.get('release')!=version or marker.get('version')!=version:
     raise SystemExit('runtime, source, manifest, and experiment release values do not match')
+if marker.get('vllm_release')!='0.25.1':
+    raise SystemExit('runtime marker does not contain the pinned vLLM semantic release')
+installed_vllm=distribution_version('vllm')
+if installed_vllm!=marker.get('vllm_distribution_version'):
+    raise SystemExit(
+        f'installed vLLM distribution {installed_vllm!r} does not match runtime marker '
+        f'{marker.get("vllm_distribution_version")!r}'
+    )
 revision=str(marker.get('git_revision',''))
 if not re.fullmatch(r'[0-9a-f]{40}',revision):
     raise SystemExit('runtime marker does not contain an immutable Git revision')

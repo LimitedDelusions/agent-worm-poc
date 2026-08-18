@@ -1,10 +1,16 @@
-# Start Here — Agent Worm POC v0.8.9
+# Start Here — Agent Worm POC v0.8.10
 
 ## End goal
 
 Produce defensible evidence showing whether the **ordered intake-to-relay model assignment** changes the probability that a safe document-borne carrier survives two independently generated artifacts.
 
 This POC decides whether the research question is measurable enough to advance to the full SANS proposal. It does not prove a universal ranking of model families.
+
+## Why v0.8.10 replaces v0.8.9
+
+The single v0.8.9 workflow again passed the complete validation job and every source check inside the Docker layer, then stopped before parser construction or image export. The pinned CUDA image reports semantic vLLM release `0.25.1`, while its exact installed distribution version is `0.25.1+cu129`; v0.8.9 incorrectly required literal distribution equality with the suffix-free release. No v0.8.9 image, registry tag, immutable reference artifact, or paid run was created. v0.8.10 validates the exact digest-pinned CUDA distribution, records both version forms, and retains the GPU-independent real-parser inspection. Details are preserved in `docs/V0_8_9_BUILD_POSTMORTEM.md`.
+
+The prompts, carriers, scoring, gates, cases, model pins, generation settings, scientific execution, and paid model-server commands are byte-identical to v0.8.9. Operationally, v0.8.10 also binds CI to the exact release tag and makes the paid launcher reject any installed vLLM distribution that differs from the baked runtime marker.
 
 ## Why v0.8.9 replaces v0.8.8
 
@@ -42,7 +48,7 @@ The v0.8.1 pre-publish audit found three operational blockers that could have fa
 2. vLLM child processes inherited unrelated interactive and provider credentials;
 3. trusted remote model code did not receive the frozen model revision explicitly, and the downloaded reasoning-parser plugin was not re-hashed immediately before execution.
 
-v0.8.9 retains those launch, secret-isolation, provenance, ShellCheck, container-runtime, artifact-body, and reserved-TLD repairs.
+v0.8.10 retains those launch, secret-isolation, provenance, ShellCheck, container-runtime, artifact-body, and reserved-TLD repairs.
 
 ## The three gates
 
@@ -69,13 +75,13 @@ If any earlier gate fails, the program stops and packages partial evidence.
 Follow `docs/RUNPOD_SETUP.md`. On the Pod, the project is copied to:
 
 ```text
-/workspace/agent_worm_poc_v0.8.9
+/workspace/agent_worm_poc_v0.8.10
 ```
 
 From a Jupyter terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.9
+cd /workspace/agent_worm_poc_v0.8.10
 export RUNPOD_HOURLY_RATE_USD="<exact displayed total hourly rate>"
 export MAX_TOTAL_COST_USD="25"
 export MAX_GPU_HOURS="8"
@@ -85,7 +91,7 @@ bash scripts/runpod/start_gated_run.sh
 Monitor from a second terminal:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.9
+cd /workspace/agent_worm_poc_v0.8.10
 bash scripts/runpod/status.sh
 ```
 
@@ -100,7 +106,7 @@ bash scripts/runpod/cancel_run.sh
 After `status.sh` reports `NOT RUNNING`, stage and send the complete verified bundle with one command:
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.9/scripts/runpod/stage_and_send_evidence.sh
+bash /workspace/agent_worm_poc_v0.8.10/scripts/runpod/stage_and_send_evidence.sh
 ```
 
 Before terminating the Pod, receive and locally verify:

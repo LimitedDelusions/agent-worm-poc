@@ -7,7 +7,8 @@ from argparse import ArgumentParser
 from importlib.metadata import version
 
 
-EXPECTED_VLLM_VERSION = "0.25.1"
+EXPECTED_VLLM_RELEASE = "0.25.1"
+EXPECTED_VLLM_DISTRIBUTION_VERSION = "0.25.1+cu129"
 REQUIRED_SERVE_FLAGS = (
     "--api-key",
     "--code-revision",
@@ -30,9 +31,10 @@ REQUIRED_SERVE_FLAGS = (
 
 
 def validate_version(observed_version: str) -> None:
-    if observed_version != EXPECTED_VLLM_VERSION:
+    if observed_version != EXPECTED_VLLM_DISTRIBUTION_VERSION:
         raise RuntimeError(
-            f"Expected vLLM {EXPECTED_VLLM_VERSION}, found {observed_version}"
+            "Expected exact vLLM distribution "
+            f"{EXPECTED_VLLM_DISTRIBUTION_VERSION}, found {observed_version}"
         )
 
 
@@ -71,7 +73,8 @@ def main() -> int:
         json.dumps(
             {
                 "passed": True,
-                "vllm_version": observed_version,
+                "vllm_release": EXPECTED_VLLM_RELEASE,
+                "vllm_distribution_version": observed_version,
                 "required_flags": list(REQUIRED_SERVE_FLAGS),
                 "serve_option_count": len(options),
             },

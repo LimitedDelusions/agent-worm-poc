@@ -1,4 +1,4 @@
-# Complete v0.8.9 Runbook
+# Complete v0.8.10 Runbook
 
 This runbook is deliberately gated. Follow it in order and do not skip a gate.
 
@@ -7,8 +7,8 @@ This runbook is deliberately gated. Follow it in order and do not skip a gate.
 ### A1. Verify release integrity
 
 ```powershell
-Get-FileHash .\agent_worm_poc_v0.8.9.zip -Algorithm SHA256
-Get-Content .\agent_worm_poc_v0.8.9.zip.sha256
+Get-FileHash .\agent_worm_poc_v0.8.10.zip -Algorithm SHA256
+Get-Content .\agent_worm_poc_v0.8.10.zip.sha256
 ```
 
 **End goal:** the two SHA-256 values match.
@@ -19,9 +19,9 @@ Get-Content .\agent_worm_poc_v0.8.9.zip.sha256
 
 Follow `CODING_HANDOFF.md`. Do not overlay files on v0.7.0.
 
-**End goal:** one clean repository containing only v0.8.9 plus `.git`.
+**End goal:** one clean repository containing only v0.8.10 plus `.git`.
 
-**Artifacts:** commit SHA and tag `v0.8.9`.
+**Artifacts:** commit SHA and tag `v0.8.10`.
 
 ### A3. Run local/free tests
 
@@ -71,7 +71,7 @@ Use `docs/RUNPOD_SETUP.md` exactly.
 ```bash
 nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader
 df -h /workspace
-cd /workspace/agent_worm_poc_v0.8.9
+cd /workspace/agent_worm_poc_v0.8.10
 python scripts/release/generate_integrity.py --check
 python scripts/validate_release.py
 ```
@@ -85,7 +85,7 @@ python scripts/validate_release.py
 Start:
 
 ```bash
-cd /workspace/agent_worm_poc_v0.8.9
+cd /workspace/agent_worm_poc_v0.8.10
 export RUNPOD_HOURLY_RATE_USD="<displayed total hourly rate>"
 bash scripts/runpod/start_gated_run.sh
 ```
@@ -154,7 +154,7 @@ Every exact positive, every ambiguous semantic candidate, every sham artifact, a
 After `status.sh` reports `NOT RUNNING`, run exactly:
 
 ```bash
-bash /workspace/agent_worm_poc_v0.8.9/scripts/runpod/stage_and_send_evidence.sh
+bash /workspace/agent_worm_poc_v0.8.10/scripts/runpod/stage_and_send_evidence.sh
 ```
 
 Receive the folder using the printed one-time code. It contains the final ZIP, `.zip.sha256`, `.zip.json`, standalone status, complete run directory, and `SHA256SUMS`. Use the exact receive/locate block in `docs/ARTIFACTS.md`; it finds the existing executable even when `runpodctl` is not on `PATH`.
@@ -165,13 +165,13 @@ Receive the folder using the printed one-time code. It contains the final ZIP, `
 $RunPodCtl = (Get-Command runpodctl -ErrorAction SilentlyContinue).Source
 if (-not $RunPodCtl) { $RunPodCtl = (Get-ChildItem "$env:USERPROFILE\Downloads" -Filter runpodctl.exe -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName }
 if (-not $RunPodCtl) { throw 'runpodctl.exe was not found.' }
-$ReceiveRoot = Join-Path $env:USERPROFILE ('Downloads\agent-worm-v089-' + (Get-Date -Format 'yyyyMMddTHHmmss'))
+$ReceiveRoot = Join-Path $env:USERPROFILE ('Downloads\agent-worm-v0810-' + (Get-Date -Format 'yyyyMMddTHHmmss'))
 New-Item -ItemType Directory -Path $ReceiveRoot -Force | Out-Null
 Push-Location $ReceiveRoot
 try { & $RunPodCtl receive '<one-time-code>'; if ($LASTEXITCODE) { throw "runpodctl receive failed: $LASTEXITCODE" } }
 finally { Pop-Location }
 $zip = Get-ChildItem $ReceiveRoot -Recurse -Filter 'agent-worm-results-*.zip' -File | Select-Object -First 1
-py -3.11 scripts\release\verify_evidence.py $zip.FullName --expected-version 0.8.9
+py -3.11 scripts\release\verify_evidence.py $zip.FullName --expected-version 0.8.10
 ```
 
 Do not continue unless the verifier reports `passed: true` for evidence and transfer.
@@ -187,7 +187,7 @@ Terminate—not merely stop—the Pod after local evidence verification.
 If `/workspace` is a RunPod Network Volume, delete that volume separately after the Pod is terminated and the evidence is verified locally. Network-volume billing continues independently of Pod state.
 
 **Final end goal:** one complete, verified, locally stored evidence package and no continuing billing. The script cannot terminate the RunPod resource itself; the operator must terminate the Pod after verification.
-## Scientific design lock (v0.8.9)
+## Scientific design lock (v0.8.10)
 
 Review these before another paid run:
 

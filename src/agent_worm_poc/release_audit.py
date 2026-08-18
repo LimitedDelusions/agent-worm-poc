@@ -21,6 +21,7 @@ REQUIRED=(
     "docs/RUNPOD_SETUP.md","docs/RUN_AND_MONITOR.md",
     "docs/V0_8_4_COMPATIBILITY_POSTMORTEM.md","docs/V0_8_5_POSITIVE_CONTROL_POSTMORTEM.md",
     "docs/V0_8_6_FAIL_CLOSED_AUDIT.md","docs/V0_8_7_CI_POSTMORTEM.md","docs/V0_8_8_BUILD_POSTMORTEM.md",
+    "docs/V0_8_9_BUILD_POSTMORTEM.md",
     ".github/workflows/validate-and-build.yml",
     "scripts/runpod/entrypoint.sh","scripts/runpod/start_gated_run.sh","scripts/runpod/status.sh","scripts/runpod/cancel_run.sh",
     "scripts/runpod/stage_and_send_evidence.sh","scripts/release/verify_evidence.py",
@@ -184,6 +185,11 @@ def audit_release(root:Path)->dict:
         if "@sha256:" not in docker:errors.append("Docker base image is not pinned by digest")
         if "python -m pytest -q" not in workflow or "PYTHONPATH=/opt/agent-worm-poc/src python -m pytest -q" not in docker:
             errors.append("CI or Docker uses a pytest entry point that can omit repository-root scripts")
+        if ('GITHUB_REF_TYPE' not in workflow
+                or 'GITHUB_REF_NAME' not in workflow
+                or 'refs/tags/v${IMAGE_VERSION}' not in workflow
+                or '$(tr -d \'\\r\\n\' < VERSION)' not in workflow):
+            errors.append("CI does not bind the build to the exact versioned tag and VERSION file")
         if re.search(r"(?i)(pip|uv pip|apt-get) install",(root/"scripts/runpod/start_gated_run.sh").read_text(encoding="utf-8") if (root/"scripts/runpod/start_gated_run.sh").exists() else ""):
             errors.append("Paid RunPod launch script performs package installation")
         launch_text=(root/"scripts/runpod/start_gated_run.sh").read_text(encoding="utf-8")
@@ -211,6 +217,17 @@ def audit_release(root:Path)->dict:
             errors.append("Docker build does not use GPU-independent vLLM CLI validation")
         if "create_parser_for_docs" not in validator or "CpuPlatform" not in validator:
             errors.append("vLLM CLI validator does not use the pinned parser-safe platform path")
+        if 'EXPECTED_VLLM_DISTRIBUTION_VERSION = "0.25.1+cu129"' not in validator:
+            errors.append("vLLM CLI validator does not require the exact pinned CUDA wheel build")
+        if 'EXPECTED_VLLM_RELEASE = "0.25.1"' not in validator:
+            errors.append("vLLM CLI validator does not record the pinned semantic release")
+        if '\\"vllm_release\\":\\"0.25.1\\"' not in docker:
+            errors.append("Container runtime marker does not record the vLLM semantic release")
+        if '\\"vllm_distribution_version\\":\\"0.25.1+cu129\\"' not in docker:
+            errors.append("Container runtime marker does not record the exact vLLM distribution build")
+        if ("distribution_version('vllm')" not in launch_text
+                or "marker.get('vllm_distribution_version')" not in launch_text):
+            errors.append("Paid launcher does not verify the live vLLM distribution against the runtime marker")
         for flag in ("--api-key","--code-revision","--disable-log-stats","--dtype",
                      "--generation-config","--gpu-memory-utilization","--host",
                      "--max-model-len","--max-num-seqs","--no-enable-prefix-caching",
@@ -232,7 +249,7 @@ def audit_release(root:Path)->dict:
                or part.endswith(".egg-info") for part in path.parts):continue
         result=subprocess.run(["bash","-n",str(path)],capture_output=True,text=True)
         if result.returncode:errors.append(f"Shell syntax error {path.relative_to(root)}: {result.stderr.strip()}")
-    result={"release":"0.8.9","passed":not errors,"errors":errors,"warnings":warnings,
+    result={"release":"0.8.10","passed":not errors,"errors":errors,"warnings":warnings,
             "scientific_controls":{"carrier_variants":3,"base_documents":3,
               "ordered_intake_relay_pairs":16,"generation_seeds_per_carrier_document":2,
               "matched_policy_inputs":True,"matched_assignment_blocks":True,

@@ -1,4 +1,4 @@
-# Agent Worm POC v0.8.9
+# Agent Worm POC v0.8.10
 
 This is a controlled, defensive proof of concept for a document-borne prompt-propagation question:
 
